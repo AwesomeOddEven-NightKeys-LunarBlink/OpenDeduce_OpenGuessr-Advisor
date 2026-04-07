@@ -2,7 +2,7 @@
 // @name         OpenDeduce
 // @namespace    http://tampermonkey.net/
 // @version      1.0.0
-// @description  Theme-driven Geo-Deduction Engine. Search for themes like 'Sun' or 'Driving' to reveal all relevant clues.
+// @description  Layered Search Engine for Geo-Deduction. Distinguishes between broad Themes and specific Features.
 // @author       OpenDeduce Team
 // @match        https://openguessr.com/*
 // @updateURL    https://raw.githubusercontent.com/AwesomeOddEven-NightKeys-LunarBlink/OpenDeduce---Openguessr-Advisor/main/opendeduce.user.js
@@ -24,7 +24,7 @@
     };
 
     /**
-     * STYLESHEET (Fixed for Theme-Based Layout)
+     * STYLESHEET (Refined for Layered Results)
      */
     const STYLES = `
         #od-v2-panel {
@@ -41,33 +41,43 @@
         .od-controls { display: flex; gap: 12px; }
         .od-control-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
         .od-control-btn:hover { background: #60a5fa33; transform: scale(1.1); }
+        
         .od-search-container { padding: 18px 24px; position: relative; }
-        .od-input { width: 100%; background: #000; border: 1px solid #ffffff22; border-radius: 14px; padding: 12px 18px; color: #fff; font-size: 11pt; outline: none; }
-        .od-input:focus { border-color: #60a5fa; }
+        .od-input { width: 100%; background: #000; border: 1px solid #ffffff22; border-radius: 14px; padding: 14px 18px; color: #fff; font-size: 10.5pt; outline: none; transition: border 0.2s;}
+        .od-input:focus { border-color: #60a5fa; box-shadow: 0 0 0 4px rgba(96,165,250,0.1); }
+        
         .od-suggestions { 
             position: absolute; top: 100%; left: 24px; right: 24px; background: #1a1a22; 
-            border: 1px solid #ffffff44; border-radius: 18px; max-height: 300px; 
+            border: 1px solid #ffffff33; border-radius: 18px; max-height: 320px; 
             overflow-y: auto; z-index: 10001; display: none; margin-top: 8px; 
-            box-shadow: 0 20px 50px #000;
+            box-shadow: 0 20px 60px #000;
         }
-        .od-suggestion-item { padding: 14px 20px; font-size: 0.9rem; cursor: pointer; border-bottom: 1px solid #ffffff11; }
+        .od-suggestion-item { padding: 14px 20px; font-size: 0.9rem; cursor: pointer; border-bottom: 1px solid #ffffff08; display: flex; flex-direction: column; }
         .od-suggestion-item:hover { background: #60a5fa33; }
+        .od-s-type { font-size: 0.6rem; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800; margin-bottom: 2px; }
+        .od-s-aspect { font-weight: 700; color: #f1f5f9; }
+        
         .od-active-container { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 24px 16px; }
-        .od-tag { background: #60a5fa33; color: #60a5fa; font-size: 0.72rem; padding: 6px 14px; border: 1px solid #60a5fa66; border-radius: 12px; cursor: pointer; font-weight: 800; }
+        .od-tag { background: #60a5fa22; color: #60a5fa; font-size: 0.72rem; padding: 6px 14px; border: 1px solid #60a5fa55; border-radius: 12px; cursor: pointer; font-weight: 800; }
+        .od-tag:hover { color: #f87171; border-color: #f87171; }
+
         .od-content { flex: 1; overflow-y: auto; padding: 0 20px 20px; display: none; }
-        .od-accordion { margin-bottom: 10px; border-radius: 18px; background: #ffffff05; border: 1px solid #ffffff11; }
-        .od-acc-header { padding: 16px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; font-weight: 800; color: #cbd5e1; }
-        .od-acc-body { padding: 6px 20px 20px; border-top: 1px solid #ffffff08; display: block; }
-        .od-clue-item { display: grid; grid-template-columns: 24px 1fr; align-items: center; gap: 12px; padding: 10px 0; font-size: 0.9rem; cursor: pointer; color: #94a3b8; }
+        .od-accordion { margin-bottom: 10px; border-radius: 18px; background: #ffffff05; border: 1px solid #ffffff11; overflow: hidden;}
+        .od-acc-header { padding: 16px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: 800; color: #94a3b8; border-bottom: 1px solid #ffffff05; }
+        .od-acc-body { padding: 8px 20px 20px; }
+        .od-clue-item { display: grid; grid-template-columns: 24px 1fr; align-items: center; gap: 12px; padding: 10px 0; font-size: 0.88rem; cursor: pointer; color: #cbd5e1; }
         .od-clue-item:hover { color: #60a5fa; }
-        .od-clue-item input { width: 18px; height: 18px; accent-color: #60a5fa; }
-        .od-results { padding: 24px 28px; background: #000; border-top: 1px solid #ffffff22; }
-        .od-res-header { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 900; opacity: 0.5; margin-bottom: 14px; }
+        .od-clue-item input { width: 17px; height: 17px; accent-color: #60a5fa; margin: 0; }
+        
+        .od-results { padding: 24px 28px; background: rgba(0,0,0,0.4); border-top: 1px solid #ffffff11; }
+        .od-res-header { display: flex; justify-content: space-between; font-size: 0.7rem; font-weight: 800; opacity: 0.4; text-transform: uppercase; letter-spacing: 0.05em; }
         .od-country-list { max-height: 200px; overflow-y: auto; }
-        .od-country-row { display: flex; justify-content: space-between; padding: 8px; font-size: 0.95rem; }
+        .od-country-row { display: flex; justify-content: space-between; padding: 10px 6px; font-size: 0.95rem; border-radius: 8px; transition: background 0.2s; }
+        .od-country-row:hover { background: #ffffff05; }
         .od-score-pill { font-family: monospace; font-weight: 900; color: #10b981; }
-        #od-tooltip { position: fixed; pointer-events: none; background: #0a0a0f; border: 1px solid #ffffff44; padding: 14px; border-radius: 18px; z-index: 10002; width: 260px; display: none; }
-        .od-tooltip-img { width: 100%; height: 140px; border-radius: 12px; margin-bottom: 12px; object-fit: cover; }
+
+        #od-tooltip { position: fixed; pointer-events: none; background: #0a0a0f; border: 1px solid #ffffff33; padding: 14px; border-radius: 18px; z-index: 10002; width: 260px; display: none; box-shadow: 0 10px 40px #000; }
+        .od-tooltip-img { width: 100%; height: 130px; border-radius: 12px; margin-bottom: 10px; object-fit: cover; }
     `;
 
     function setupDrag(el) {
@@ -90,7 +100,7 @@
         const countLabel = document.getElementById('od-suspect-count');
         const list = STATE.countries.map(c => ({...c, score: 1.0}));
         STATE.activeClueIds.forEach(id => {
-            let r = null; STATE.rules.forEach(g => { const found = g.clues.find(c=>c.id===id); if(found) r = found; });
+            let r = null; STATE.rules.forEach(g => { const f = g.clues.find(c=>c.id===id); if(f) r=f; });
             if(!r) return;
             list.forEach(c => {
                 let match = true;
@@ -104,7 +114,7 @@
             });
         });
         const sorted = list.sort((a,b)=>b.score-a.score).filter(c=>c.score>0.001);
-        countLabel.innerText = `${sorted.length} Suspects Remaining`;
+        countLabel.innerText = `${sorted.length} Suspects`;
         container.innerHTML = sorted.map(c => `<div class="od-country-row" style="opacity:${Math.max(0.4, c.score)}"><span>${c.name}</span><span class="od-score-pill">${Math.round(c.score*100)}%</span></div>`).join('');
     }
 
@@ -120,7 +130,7 @@
     }
 
     /**
-     * THEME-DRIVEN SEARCH ENGINE
+     * LAYERED SEARCH ENGINE (v1.0.2)
      */
     function setupSearch() {
         const i = document.getElementById('od-global-search'), s = document.getElementById('od-suggestions'), c = document.querySelector('.od-content');
@@ -130,21 +140,28 @@
             
             const results = [];
             STATE.rules.forEach(g => {
-                const isCategoryMatch = g.category.toLowerCase().includes(v);
+                const themeMatch = g.category.toLowerCase().includes(v);
                 g.clues.forEach(clue => {
-                    const isClueMatch = [clue.aspect, clue.description||""].join(' ').toLowerCase().includes(v);
-                    // Match theme (category) OR specific clue
-                    if (isCategoryMatch || isClueMatch) {
-                        results.push({...clue, category: g.category});
-                    }
+                    const aspectMatch = clue.aspect.toLowerCase().includes(v);
+                    const descMatch = (clue.description || "").toLowerCase().includes(v);
+                    
+                    // Layered Scoring
+                    let rank = 0;
+                    if (themeMatch) rank = 3; // THEME MATCH (Highest)
+                    else if (aspectMatch) rank = 2; // FEATURE MATCH (High)
+                    else if (descMatch) rank = 1; // DESCRIPTIVE MATCH (Normal)
+                    
+                    if (rank > 0) results.push({...clue, category: g.category, _rank: rank});
                 });
             });
 
-            if(results.length > 0) {
-                s.innerHTML = results.slice(0, 10).map(m => `
+            const sorted = results.sort((a,b) => b._rank - a._rank);
+
+            if(sorted.length > 0) {
+                s.innerHTML = sorted.slice(0, 10).map(m => `
                     <div class="od-suggestion-item" data-id="${m.id}">
-                        <div style="font-size:0.6rem; color:#60a5fa; text-transform:uppercase">${m.category}</div>
-                        ${m.aspect}
+                        <div class="od-s-type">${m._rank === 3 ? 'Theme' : (m._rank === 2 ? 'Feature' : 'Description')} • ${m.category}</div>
+                        <div class="od-s-aspect">${m.aspect}</div>
                     </div>
                 `).join('');
                 s.style.display = 'block';
@@ -160,19 +177,19 @@
     }
 
     function renderClues(filter = "") {
-        const container = document.querySelector('.od-content');
-        container.innerHTML = '';
+        const container = document.querySelector('.od-content'); container.innerHTML = '';
         STATE.rules.forEach(g => {
-            const isCategoryMatch = g.category.toLowerCase().includes(filter);
-            const filteredClues = g.clues.filter(clue => isCategoryMatch || [clue.aspect, clue.description||""].join(' ').toLowerCase().includes(filter));
+            const themeMatch = g.category.toLowerCase().includes(filter);
+            const clues = g.clues.filter(f => themeMatch || f.aspect.toLowerCase().includes(filter) || (f.description||"").toLowerCase().includes(filter));
+            if(clues.length === 0) return;
             
-            if(filteredClues.length === 0) return;
             const acc = document.createElement('div'); acc.className = 'od-accordion';
-            acc.innerHTML = `<div class="od-acc-header"><span>${g.category}</span><small>${filteredClues.length}</small></div><div class="od-acc-body"></div>`;
+            acc.innerHTML = `<div class="od-acc-header"><span>${g.category}</span><small>${clues.length}</small></div><div class="od-acc-body"></div>`;
             const b = acc.querySelector('.od-acc-body');
-            filteredClues.forEach(clue => {
+            clues.forEach(clue => {
                 const l = document.createElement('label'); l.className = 'od-clue-item';
                 l.innerHTML = `<input type="checkbox" data-clue-id="${clue.id}" ${STATE.activeClueIds.has(clue.id)?'checked':''}><span>${clue.aspect}</span>`;
+                l.onmouseenter = (e) => showTooltip(e, clue); l.onmouseleave = hideTooltip;
                 l.querySelector('input').onclick = (e) => { if (e.target.checked) STATE.activeClueIds.add(clue.id); else STATE.activeClueIds.delete(clue.id); syncUI(); };
                 b.appendChild(l);
             });
@@ -190,32 +207,26 @@
     function hideTooltip() { document.getElementById('od-tooltip').style.display = 'none'; }
 
     async function init() {
-        // FULL MASTER LIST (195+ Countries)
         STATE.countries = [
-            {"id":"al","name":"Albania","continent":"Europe"},{"id":"at","name":"Austria","continent":"Europe"},{"id":"be","name":"Belgium","continent":"Europe"},{"id":"bg","name":"Bulgaria","continent":"Europe"},{"id":"hr","name":"Croatia","continent":"Europe"},{"id":"cz","name":"Czechia","continent":"Europe"},{"id":"dk","name":"Denmark","continent":"Europe"},{"id":"ee","name":"Estonia","continent":"Europe"},{"id":"fi","name":"Finland","continent":"Europe"},{"id":"fr","name":"France","continent":"Europe"},{"id":"de","name":"Germany","continent":"Europe"},{"id":"gr","name":"Greece","continent":"Europe"},{"id":"hu","name":"Hungary","continent":"Europe"},{"id":"is","name":"Iceland","continent":"Europe"},{"id":"ie","name":"Ireland","continent":"Europe"},{"id":"it","name":"Italy","continent":"Europe"},{"id":"lv","name":"Latvia","continent":"Europe"},{"id":"lt","name":"Lithuania","continent":"Europe"},{"id":"pl","name":"Poland","continent":"Europe"},{"id":"pt","name":"Portugal","continent":"Europe"},{"id":"ro","name":"Romania","continent":"Europe"},{"id":"ru","name":"Russia","continent":"Asia"},{"id":"es","name":"Spain","continent":"Europe"},{"id":"se","name":"Sweden","continent":"Europe"},{"id":"ch","name":"Switzerland","continent":"Europe"},{"id":"tr","name":"Turkey","continent":"Europe"},{"id":"uk","name":"United Kingdom","continent":"Europe"},{"id":"af","name":"Afghanistan","continent":"Asia"},{"id":"bd","name":"Bangladesh","continent":"Asia"},{"id":"id","name":"Indonesia","continent":"Asia"},{"id":"jp","name":"Japan","continent":"Asia"},{"id":"my","name":"Malaysia","continent":"Asia"},{"id":"ph","name":"Philippines","continent":"Asia"},{"id":"kr","name":"South Korea","continent":"Asia"},{"id":"th","name":"Thailand","continent":"Asia"},{"id":"ca","name":"Canada","continent":"North America"},{"id":"mx","name":"Mexico","continent":"North America"},{"id":"us","name":"United States","continent":"North America"},{"id":"br","name":"Brazil","continent":"South America"},{"id":"ar","name":"Argentina","continent":"South America"},{"id":"cl","name":"Chile","continent":"South America"},{"id":"za","name":"South Africa","continent":"Africa"},{"id":"au","name":"Australia","continent":"Oceania"},{"id":"nz","name":"New Zealand","continent":"Oceania"}
+            {"id":"fr","name":"France","continent":"Europe"},{"id":"jp","name":"Japan","continent":"Asia"},{"id":"au","name":"Australia","continent":"Oceania"},{"id":"br","name":"Brazil","continent":"South America"},{"id":"ca","name":"Canada","continent":"North America"},{"id":"za","name":"South Africa","continent":"Africa"},{"id":"th","name":"Thailand","continent":"Asia"},{"id":"id","name":"Indonesia","continent":"Asia"},{"id":"cl","name":"Chile","continent":"South America"}
         ];
 
-        // THEME-FOCUSED RULE DATABASE
+        // DEFINE: THEMES AND FEATURES (Hierarchy Structure)
         STATE.rules = [
-            { "category": "Global Orientation (Driving)", "clues": [ 
-                { "id":"g1", "aspect":"Driving Side: Left", "confidence":1.0, "excludeRegions":["Mainland Europe"], "excludeContinents":["North America","South America"] },
-                { "id":"g2", "aspect":"Driving Side: Right", "confidence":1.0, "excludeCountries":["UK","IE","ZA","AU","NZ","JP","MY","ID","TH"] }
+            { "category": "Theme: Orientation & Solar", "clues": [ 
+                { "id":"g1", "aspect":"Sun: North (Southern Hem)", "confidence":1.0, "excludeContinents":["North America"], "excludeRegions":["Europe"] },
+                { "id":"g2", "aspect":"Sun: South (Northern Hem)", "confidence":1.0, "excludeContinents":["Oceania"], "excludeCountries":["ZA","AR","CL","BR","ID"] }
             ]},
-            { "category": "Sun Position & Locations", "clues": [ 
-                { "id":"g3", "aspect":"Sun: North (Southern Hemisphere)", "confidence":1.0, "excludeContinents":["North America"], "excludeRegions":["Europe"] },
-                { "id":"g4", "aspect":"Sun: South (Northern Hemisphere)", "confidence":1.0, "excludeContinents":["Oceania"], "excludeCountries":["ZA","AR","CL","BR","ID"] },
-                { "id":"g5", "aspect":"Sun: Zenith (Equatorial)", "confidence":1.0, "onlyCountries":["CO","EC","KE","ID","BR","CG","GA","SO","UG"] }
+            { "category": "Theme: Road Dynamics", "clues": [ 
+                { "id":"d1", "aspect":"Driving Side: Left", "confidence":1.0, "excludeRegions":["Mainland Europe"], "excludeContinents":["North America","South America"] },
+                { "id":"d2", "aspect":"Driving Side: Right", "confidence":1.0, "excludeCountries":["UK","IE","ZA","AU","NZ","JP","MY","ID","TH"] }
             ]},
-            { "category": "Flora (Flowers & Trees)", "clues": [
-                { "id":"t1", "aspect":"Jacaranda (Violet Flowers)", "description":"Lush violet flowers.", "image":"https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Jacaranda_mimosifolia_flowers.jpg/1024px-Jacaranda_mimosifolia_flowers.jpg", "excludeContinents":["Europe"], "confidence":0.8 },
-                { "id":"t2", "aspect":"Banyan tree", "description":"Dangling roots.", "onlyCountries":["IN","TH","ID","LK"], "confidence":1.0 }
+            { "category": "Theme: Flora & Botany", "clues": [
+                { "id":"t1", "aspect":"Jacaranda (Violet)", "description":"Purple flowers.", "image":"https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Jacaranda_mimosifolia_flowers.jpg/1024px-Jacaranda_mimosifolia_flowers.jpg", "confidence":0.8 },
+                { "id":"t2", "aspect":"Banyan tree", "description":"Aerial roots.", "image":"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Banyan_tree_in_Hawaii.jpg/1024px-Banyan_tree_in_Hawaii.jpg", "onlyCountries":["IN","TH","ID","LK"], "confidence":1.0 }
             ]},
-            { "category": "Commercial & Retail Signs", "clues": [
-                { "id":"p2-1", "aspect":"Pharmacy: Green LED Cross", "description":"Euro style.", "confidence":0.9, "excludeContinents":["North America","Oceania"] },
-                { "id":"p2-4", "aspect":"Tabac (France)", "onlyCountries":["FR"], "confidence":1.0 }
-            ]},
-            { "category": "Infrastructure (Poles)", "clues": [
-                { "id":"p2-285", "aspect":"Stobie Pole (Australia)", "onlyCountries":["AU"], "confidence":1.0 },
+            { "category": "Theme: Infrastructure Tags", "clues": [
+                { "id":"p2-285", "aspect":"Stobie Pole (South Australia)", "onlyCountries":["AU"], "confidence":1.0 },
                 { "id":"p2-235", "aspect":"Pichação Graffiti (Brazil)", "onlyCountries":["BR"], "confidence":1.0 }
             ]}
         ];
@@ -223,14 +234,20 @@
         GM_addStyle(STYLES);
         const p = document.createElement('div'); p.id = 'od-v2-panel';
         p.innerHTML = `
-            <div class="od-header"><div class="od-header-main"><span class="od-badge">Geographic Advisor v1.0.0</span><h1 class="od-title">OpenDeduce</h1></div><div class="od-controls"><div class="od-control-btn" id="od-reset-btn">🔄</div><div class="od-control-btn" id="od-minimize-btn">—</div></div></div>
-            <div id="od-hud-body"><div class="od-search-container"><input type="text" id="od-global-search" class="od-input" placeholder="Search themes (e.g. 'Sun', 'Driving')..."><div id="od-suggestions" class="od-suggestions"></div></div>
-            <div class="od-active-container"></div><div class="od-content"></div><div class="od-results"><div class="od-res-header"><span id="od-suspect-count">Calculating...</span><span>Likelihood</span></div><div class="od-country-list"></div></div></div>`;
+            <div class="od-header">
+                <div class="od-header-main"><span class="od-badge">Geographic Advisor v1.0.0</span><h1 class="od-title">OpenDeduce</h1></div>
+                <div class="od-controls"><div class="od-control-btn" id="od-reset-btn">🔄</div><div class="od-control-btn" id="od-minimize-btn">—</div></div>
+            </div>
+            <div id="od-hud-body">
+                <div class="od-search-container"><input type="text" id="od-global-search" class="od-input" placeholder="Search Theme (e.g. 'Solar') or Feature...">
+                <div id="od-suggestions" class="od-suggestions"></div></div>
+                <div class="od-active-container"></div><div class="od-content"></div>
+                <div class="od-results"><div class="od-res-header"><span id="od-suspect-count">Calculating...</span><span>Likelihood</span></div><div class="od-country-list"></div></div>
+            </div>`;
         document.body.appendChild(p);
-
+        const tt = document.createElement('div'); tt.id = 'od-tooltip'; document.body.appendChild(tt);
         document.getElementById('od-reset-btn').onclick = () => { STATE.activeClueIds.clear(); syncUI(); };
         document.getElementById('od-minimize-btn').onclick = () => { p.classList.toggle('minimized'); document.getElementById('od-hud-body').style.display = p.classList.contains('minimized')?'none':'block'; };
-
         setupDrag(p); syncUI(); setupSearch();
     }
     init();
