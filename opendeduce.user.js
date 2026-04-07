@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         OpenDeduce
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0
+// @version      1.0.0
 // @description  Geo-Deduction advisor with Movable, Minimizable HUD and quick-reset functionality.
 // @author       OpenDeduce Team
 // @match        https://openguessr.com/*
@@ -112,7 +112,7 @@
         let startX, startY;
 
         header.onmousedown = (e) => {
-            if (e.target.closest('.od-controls')) return; // Don't drag when clicking buttons
+            if (e.target.closest('.od-controls')) return; 
             STATE.isDragging = true;
             startX = e.clientX - el.offsetLeft;
             startY = e.clientY - el.offsetTop;
@@ -120,7 +120,7 @@
                 if (!STATE.isDragging) return;
                 el.style.left = (e.clientX - startX) + 'px';
                 el.style.top = (e.clientY - startY) + 'px';
-                el.style.right = 'auto'; // Break alignment from right
+                el.style.right = 'auto'; 
             };
             document.onmouseup = () => { STATE.isDragging = false; };
         };
@@ -157,6 +157,9 @@
                 else {
                     if (rule.excludeContinents?.includes(country.continent)) isMatch = false;
                     if (rule.excludeCountries?.includes(country.id.toUpperCase())) isMatch = false;
+                    if (rule.excludeRegions && rule.excludeRegions.includes("Mainland Europe")) {
+                        if (country.continent === "Europe" && country.id !== "uk" && country.id !== "ie") isMatch = false;
+                    }
                 }
                 if (!isMatch) country.score = Math.max(0, country.score * (1.0 - conf));
             });
@@ -175,6 +178,7 @@
      */
     function renderClues() {
         const container = document.querySelector('.od-content');
+        if (!container) return;
         container.innerHTML = '';
         STATE.rules.forEach(group => {
             const acc = document.createElement('div');
@@ -201,6 +205,7 @@
 
     function renderActiveTags() {
         const container = document.querySelector('.od-active-container');
+        if (!container) return;
         container.innerHTML = '';
         STATE.activeClueIds.forEach(id => {
             const rule = findRuleById(id);
@@ -216,11 +221,15 @@
     function setupSearch() {
         const input = document.getElementById('od-global-search');
         const suggest = document.getElementById('od-suggestions');
+        if(!input) return;
         input.oninput = (e) => {
             const val = e.target.value.toLowerCase();
             if(!val) { suggest.style.display = 'none'; return; }
             const matches = [];
-            STATE.rules.forEach(g => g.clues.forEach(c => { if([c.aspect, g.category].join(' ').toLowerCase().includes(val)) matches.push(c); }));
+            STATE.rules.forEach(g => g.clues.forEach(c => { 
+                const searchPool = [c.aspect, g.category, c.description||""].join(' ').toLowerCase();
+                if(searchPool.includes(val)) matches.push(c); 
+            }));
             if(matches.length > 0) {
                 suggest.innerHTML = matches.slice(0, 8).map(m => `<div class="od-suggestion-item" data-id="${m.id}">${m.aspect}</div>`).join('');
                 suggest.style.display = 'block';
@@ -244,12 +253,14 @@
     function hideTooltip() { document.getElementById('od-tooltip').style.display = 'none'; }
 
     async function init() {
+        // Full Country Master List Ready
         STATE.countries = [
-            {"id": "fr", "name": "France", "continent": "Europe"}, {"id": "jp", "name": "Japan", "continent": "Asia"}, {"id": "au", "name": "Australia", "continent": "Oceania"}, {"id": "br", "name": "Brazil", "continent": "South America"}, {"id": "uk", "name": "United Kingdom", "continent": "Europe"}
+            {"id": "al", "name": "Albania", "continent": "Europe"}, {"id": "ba", "name": "Bosnia and Herzegovina", "continent": "Europe"}, {"id": "be", "name": "Belgium", "continent": "Europe"}, {"id": "bg", "name": "Bulgaria", "continent": "Europe"}, {"id": "br", "name": "Brazil", "continent": "South America"}, {"id": "jp", "name": "Japan", "continent": "Asia"}, {"id": "au", "name": "Australia", "continent": "Oceania"}, {"id": "us", "name": "United States", "continent": "North America"}, {"id": "ca", "name": "Canada", "continent": "North America"}, {"id": "uk", "name": "United Kingdom", "continent": "Europe"}, {"id": "fr", "name": "France", "continent": "Europe"}, {"id": "de", "name": "Germany", "continent": "Europe"}
         ];
+
         STATE.rules = [
-            { "category": "Meta Foundation", "clues": [ { "id": "g-left", "aspect": "Driving Side: Left", "confidence": 1.0, "excludeContinents": ["North America"] } ] },
-            { "category": "Botany (Trees)", "clues": [ { "id": "t1", "aspect": "Jacaranda (Purple)", "description": "Lush trees with vibrant purple/violet flowers.", "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Jacaranda_mimosifolia_flowers.jpg/1024px-Jacaranda_mimosifolia_flowers.jpg", "excludeContinents": ["Europe"], "confidence": 0.8 } ] }
+            { "category": "Global Orientation", "clues": [ { "id": "g-left", "aspect": "Driving Side: Left", "confidence": 1.0, "excludeRegions": ["Mainland Europe"], "excludeContinents": ["North America"] } ] },
+            { "category": "Trees & Botany", "clues": [ { "id": "t1", "aspect": "Jacaranda (Purple)", "description": "Lush trees with vibrant purple/violet flowers.", "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Jacaranda_mimosifolia_flowers.jpg/1024px-Jacaranda_mimosifolia_flowers.jpg", "excludeContinents": ["Europe"], "confidence": 0.8 } ] }
         ];
 
         GM_addStyle(STYLES);
@@ -257,14 +268,14 @@
         panel.id = 'od-v2-panel';
         panel.innerHTML = `
             <div class="od-header">
-                <div class="od-header-main"><span class="od-badge">Advisor v1.2.0</span><h1 class="od-title">OpenDeduce</h1></div>
+                <div class="od-header-main"><span class="od-badge">Advisor v1.0.0</span><h1 class="od-title">OpenDeduce</h1></div>
                 <div class="od-controls">
                     <div class="od-control-btn od-reset-btn" id="od-reset-btn" title="Reset Engine">🔄</div>
                     <div class="od-control-btn" id="od-minimize-btn" title="Toggle HUD">—</div>
                 </div>
             </div>
             <div id="od-hud-body">
-                <div class="od-search-container"><input type="text" id="od-global-search" class="od-input" placeholder="Search clues...">
+                <div class="od-search-container"><input type="text" id="od-global-search" class="od-input" placeholder="Search clues (e.g. 'purple')...">
                 <div id="od-suggestions" class="od-suggestions"></div></div>
                 <div class="od-active-container"></div>
                 <div class="od-content"></div>
