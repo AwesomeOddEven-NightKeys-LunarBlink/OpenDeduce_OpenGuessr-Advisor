@@ -1,52 +1,43 @@
 {
   "version": "1.0.0",
   "countries": [
-    {"id":"al","name":"Albania","continent":"Europe"},{"id":"ad","name":"Andorra","continent":"Europe"},{"id":"at","name":"Austria","continent":"Europe"},{"id":"be","name":"Belgium","continent":"Europe"},{"id":"br","name":"Brazil","continent":"South America"},{"id":"ca","name":"Canada","continent":"North America"},{"id":"cl","name":"Chile","continent":"South America"},{"id":"cn","name":"China","continent":"Asia"},{"id":"co","name":"Colombia","continent":"South America"},{"id":"cz","name":"Czechia","continent":"Europe"},{"id":"dk","name":"Denmark","continent":"Europe"},{"id":"ee","name":"Estonia","continent":"Europe"},{"id":"fi","name":"Finland","continent":"Europe"},{"id":"fr","name":"France","continent":"Europe"},{"id":"de","name":"Germany","continent":"Europe"},{"id":"gh","name":"Ghana","continent":"Africa"},{"id":"gr","name":"Greece","continent":"Europe"},{"id":"hu","name":"Hungary","continent":"Europe"},{"id":"is","name":"Iceland","continent":"Europe"},{"id":"in","name":"India","continent":"Asia"},{"id":"id","name":"Indonesia","continent":"Asia"},{"id":"ie","name":"Ireland","continent":"Europe"},{"id":"it","name":"Italy","continent":"Europe"},{"id":"jp","name":"Japan","continent":"Asia"},{"id":"ke","name":"Kenya","continent":"Africa"},{"id":"lv","name":"Latvia","continent":"Europe"},{"id":"lt","name":"Lithuania","continent":"Europe"},{"id":"my","name":"Malaysia","continent":"Asia"},{"id":"mx","name":"Mexico","continent":"North America"},{"id":"nl","name":"Netherlands","continent":"Europe"},{"id":"nz","name":"New Zealand","continent":"Oceania"},{"id":"ph","name":"Philippines","continent":"Asia"},{"id":"no","name":"Norway","continent":"Europe"},{"id":"pl","name":"Poland","continent":"Europe"},{"id":"pt","name":"Portugal","continent":"Europe"},{"id":"ro","name":"Romania","continent":"Europe"},{"id":"ru","name":"Russia","continent":"Asia"},{"id":"sk","name":"Slovakia","continent":"Europe"},{"id":"za","name":"South Africa","continent":"Africa"},{"id":"es","name":"Spain","continent":"Europe"},{"id":"se","name":"Sweden","continent":"Europe"},{"id":"ch","name":"Switzerland","continent":"Europe"},{"id":"tw","name":"Taiwan","continent":"Asia"},{"id":"th","name":"Thailand","continent":"Asia"},{"id":"tr","name":"Turkey","continent":"Europe"},{"id":"ua","name":"Ukraine","continent":"Europe"},{"id":"uk","name":"United Kingdom","continent":"Europe"},{"id":"us","name":"United States","continent":"North America"}
+    {"id":"cz","name":"Czechia","continent":"Europe"},{"id":"hu","name":"Hungary","continent":"Europe"},{"id":"pl","name":"Poland","continent":"Europe"},{"id":"kr","name":"South Korea","continent":"Asia"},{"id":"ua","name":"Ukraine","continent":"Europe"},{"id":"tr","name":"Turkey","continent":"Europe"},{"id":"no","name":"Norway","continent":"Europe"},{"id":"dk","name":"Denmark","continent":"Europe"},{"id":"ru","name":"Russia","continent":"Asia"},{"id":"uk","name":"United Kingdom","continent":"Europe"},{"id":"se","name":"Sweden","continent":"Europe"},{"id":"is","name":"Iceland","continent":"Europe"},{"id":"ch","name":"Switzerland","continent":"Europe"},{"id":"us","name":"United States","continent":"North America"},{"id":"ca","name":"Canada","continent":"North America"},{"id":"mx","name":"Mexico","continent":"North America"},{"id":"br","name":"Brazil","continent":"South America"},{"id":"cl","name":"Chile","continent":"South America"},{"id":"ar","name":"Argentina","continent":"South America"},{"id":"za","name":"South Africa","continent":"Africa"},{"id":"au","name":"Australia","continent":"Oceania"},{"id":"nz","name":"New Zealand","continent":"Oceania"},{"id":"id","name":"Indonesia","continent":"Asia"},{"id":"th","name":"Thailand","continent":"Asia"},{"id":"jp","name":"Japan","continent":"Asia"},{"id":"fr","name":"France","continent":"Europe"},{"id":"de","name":"Germany","continent":"Europe"},{"id":"es","name":"Spain","continent":"Europe"},{"id":"ro","name":"Romania","continent":"Europe"},{"id":"sk","name":"Slovakia","continent":"Europe"},{"id":"fi","name":"Finland","continent":"Europe"}
   ],
   "rules": [
-    { "category": "1. Commercial & Signage", "clues": [ 
-        { "id":"sc1", "aspect":"Pharmacy: Green LED Cross", "confidence":1.0, "excludeCountries":["US","CA","AU","NZ","ZA","NG"] },
-        { "id":"sc4", "aspect":"Tabac Sign (Red Diamond)", "confidence":1.0, "onlyCountries":["FR"] },
-        { "id":"sc5", "aspect":"Tabacchi (B/W 'T')", "confidence":1.0, "onlyCountries":["IT"] },
-        { "id":"sc7", "aspect":"Gas: Pemex", "confidence":1.0, "onlyCountries":["MX"] },
-        { "id":"sc8", "aspect":"Gas: Petrobras", "confidence":1.0, "onlyCountries":["BR"] },
-        { "id":"sc12", "aspect":"Gas: Pertamina", "confidence":1.0, "onlyCountries":["ID"] },
-        { "id":"sc13", "aspect":"Density: Vending Machines", "confidence":1.0, "onlyCountries":["JP"] },
-        { "id":"sc15", "aspect":"Convenience: Oxxo", "confidence":1.0, "onlyCountries":["MX","CO","CL"] },
-        { "id":"sc17", "aspect":"Indomaret/Alfamart", "confidence":1.0, "onlyCountries":["ID"] },
-        { "id":"sc20", "aspect":"Corporate: Greggs", "confidence":1.0, "onlyCountries":["UK"] }
+    { "category": "Block 1: Linguistic Scalpel", "clues": [ 
+        { "id":"l1", "aspect":"Letter 'ř'", "confidence":1.0, "onlyCountries":["CZ"] },
+        { "id":"l2", "aspect":"Letter 'ő' or 'ű'", "confidence":1.0, "onlyCountries":["HU"] },
+        { "id":"l3", "aspect":"Letter 'ł'", "confidence":1.0, "onlyCountries":["PL"] },
+        { "id":"l4", "aspect":"Hangul (Circles/Blocks)", "confidence":1.0, "onlyCountries":["KR"] },
+        { "id":"l5", "aspect":"Letter 'ø' or 'æ'", "confidence":1.0, "onlyCountries":["NO","DK"] },
+        { "id":"l6", "aspect":"Letter 'ğ'", "confidence":1.0, "onlyCountries":["TR"] }
     ]},
-    { "category": "2. Public Transit", "clues": [ 
-        { "id":"pt31", "aspect":"Bus Stop: Yellow Circle 'H'", "confidence":1.0, "onlyCountries":["DE","AT"] },
-        { "id":"pt32", "aspect":"Bus Stop: Red Circle 'Bus'", "confidence":1.0, "onlyCountries":["UK"] },
-        { "id":"pt40", "aspect":"Bus: Jeepneys", "confidence":1.0, "onlyCountries":["PH"] },
-        { "id":"pt43", "aspect":"Paris Metropolitain", "confidence":1.0, "onlyCountries":["FR"] },
-        { "id":"pt48", "aspect":"Taxis: Black Cabs", "confidence":1.0, "onlyCountries":["UK"] },
-        { "id":"pt54", "aspect":"Scooter Parking: White Rect", "confidence":1.0, "onlyCountries":["TW"] }
+    { "category": "Block 2: Road Forensics", "clues": [ 
+        { "id":"r101", "aspect":"Solid Double Yellow Center", "confidence":1.0, "excludeCountries":["UK","FR","DE","ES"] },
+        { "id":"r116", "aspect":"Dashed Yellow Outer Lines", "confidence":1.0, "onlyCountries":["SE"] },
+        { "id":"r131", "aspect":"Zig-Zag Crosswalk Lines", "confidence":1.0, "onlyCountries":["UK"] },
+        { "id":"r161", "aspect":"Yellow Center + Yellow Edge", "confidence":1.0, "excludeContinents":["Europe"], "excludeCountries":["RU"] },
+        { "id":"r176", "aspect":"Road Text: 'SLOW'", "confidence":0.95, "excludeCountries":["MX","BR"] }
     ]},
-    { "category": "3. Utilities & Furniture", "clues": [ 
-        { "id":"uf64", "aspect":"Manhole: Highly Ornate", "confidence":1.0, "onlyCountries":["JP"] },
-        { "id":"uf66", "aspect":"Green Street Cabinets (BT)", "confidence":1.0, "onlyCountries":["UK"] },
-        { "id":"uf73", "aspect":"Classic Red Phone Box", "confidence":1.0, "onlyCountries":["UK"] },
-        { "id":"uf79", "aspect":"Yellow Box Speed Cameras", "confidence":1.0, "onlyCountries":["UK"] },
-        { "id":"uf285", "aspect":"Stobie Poles (Steel/Conc)", "confidence":1.0, "onlyCountries":["AU"] }
+    { "category": "Block 3: Infrastructure Gates", "clues": [ 
+        { "id":"p201", "aspect":"A-Frame Concrete Poles", "confidence":1.0, "excludeCountries":["US","CA","UK","JP"] },
+        { "id":"p216", "aspect":"Hole-Poles (Rectangular)", "confidence":1.0, "excludeCountries":["FR","UK","DE"] },
+        { "id":"p231", "aspect":"Wooden Trident Poles", "confidence":1.0, "onlyCountries":["US","CA","MX"] },
+        { "id":"p246", "aspect":"Stobie Poles (Steel/Conc)", "confidence":1.0, "onlyCountries":["AU"] },
+        { "id":"p286", "aspect":"Concrete Poles w/ 6+ Holes", "confidence":0.95, "onlyCountries":["RO","HU"] }
     ]},
-    { "category": "4. Deep Flora & Agriculture", "clues": [ 
-        { "id":"fl101", "aspect":"Jacaranda (Purple Flow)", "confidence":0.8, "excludeCountries":["RU","NO","SE","FI","CA"] },
-        { "id":"fl108", "aspect":"Joshua Tree", "confidence":1.0, "onlyCountries":["US"] },
-        { "id":"fl109", "aspect":"Saguaro Cactus", "confidence":1.0, "onlyCountries":["US","MX"] },
-        { "id":"fl121", "aspect":"Wooden Windmills", "confidence":1.0, "onlyCountries":["NL"] }
+    { "category": "Block 4: Commercial Hard-Locks", "clues": [ 
+        { "id":"c301", "aspect":"Domain .co.za", "confidence":1.0, "onlyCountries":["ZA"] },
+        { "id":"c316", "aspect":"Domain .com.br", "confidence":1.0, "onlyCountries":["BR"] },
+        { "id":"c331", "aspect":"ALTO Stop Sign", "confidence":1.0, "excludeCountries":["ES","US","BR"] },
+        { "id":"c361", "aspect":"Oxxo Store", "confidence":1.0, "onlyCountries":["MX","CO","CL"] },
+        { "id":"c386", "aspect":"Yellow 'H' Bus Stop", "confidence":1.0, "onlyCountries":["DE","AT"] }
     ]},
-    { "category": "5. Micro-Vehicles & Plates", "clues": [ 
-        { "id":"vp143", "aspect":"Plates: Green Text/White", "confidence":1.0, "onlyCountries":["NO"] },
-        { "id":"vp145", "aspect":"Plates: Mercosur", "confidence":1.0, "onlyCountries":["BR","AR","UY","PY"] },
-        { "id":"vp146", "aspect":"Proton / Perodua", "confidence":0.95, "onlyCountries":["MY"] },
-        { "id":"vp158", "aspect":"Omafiets (Dutch Bikes)", "confidence":1.0, "onlyCountries":["NL"] }
-    ]},
-    { "category": "7. Signage Artifacts", "clues": [ 
-        { "id":"sa206", "aspect":"Signs: Miles", "confidence":1.0, "onlyCountries":["US","UK"] },
-        { "id":"sa210", "aspect":"Warning: Kangaroo/Koala", "confidence":1.0, "onlyCountries":["AU"] },
-        { "id":"sa235", "aspect":"Graffiti: Pichação", "confidence":1.0, "onlyCountries":["BR"] }
+    { "category": "Block 5: Environmental Barriers", "clues": [ 
+        { "id":"e401", "aspect":"Baobab Trees", "confidence":1.0, "onlyCountries":["SN","MG"] },
+        { "id":"e416", "aspect":"Monkey Puzzle Trees", "confidence":1.0, "onlyCountries":["CL","AR"] },
+        { "id":"e431", "aspect":"Treeless Tundra (Flat)", "confidence":1.0, "onlyCountries":["IS"] },
+        { "id":"e446", "aspect":"Terraced Rice Paddies", "confidence":1.0, "onlyCountries":["VN","ID","TH","PH","JP"] }
     ]}
   ]
 }
