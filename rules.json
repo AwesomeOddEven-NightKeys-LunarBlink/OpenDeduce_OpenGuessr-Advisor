@@ -1,0 +1,41 @@
+[
+  {
+    "category": "Orientation",
+    "clues": [
+      { "id": 1, "aspect": "Driving Side: Left", "excludeContinents": ["North America", "South America"], "excludeRegions": ["Mainland Europe"], "excludeCountries": ["RU", "CN"] },
+      { "id": 2, "aspect": "Driving Side: Right", "excludeContinents": ["Oceania"], "excludeCountries": ["UK", "IE", "ZA", "JP", "IN", "TH", "MY", "ID", "SG"] },
+      { "id": 3, "aspect": "Sun: North (Southern Hem)", "excludeContinents": ["North America"], "excludeRegions": ["Europe"], "excludeCountries": ["RU", "JP", "CN"] },
+      { "id": 4, "aspect": "Sun: South (Northern Hem)", "excludeContinents": ["Oceania"], "excludeCountries": ["ZA", "AR", "CL", "NZ"] }
+    ]
+  },
+  {
+    "category": "Road Lines",
+    "clues": [
+      { "id": 11, "aspect": "Double Yellow Center", "excludeContinents": ["Europe", "Africa", "Oceania"], "excludeCountries": ["RU"] },
+      { "id": 20, "aspect": "Zig-Zag White Lines", "onlyCountries": ["UK", "IE"] },
+      { "id": 38, "aspect": "Red Bike Lanes", "onlyCountries": ["NL", "DK"] }
+    ]
+  },
+  {
+    "category": "Infrastructure",
+    "clues": [
+      { "id": 125, "aspect": "A-Frame/Ladder Pole", "onlyCountries": ["FR", "ES", "PT", "IT", "RO"] },
+      { "id": 126, "aspect": "Concrete Pole w/ Holes", "onlyCountries": ["RO", "HU", "PL", "LT", "LV", "EE"] },
+      { "id": 145, "aspect": "Bollard: Red Top Band", "onlyCountries": ["FR"] },
+      { "id": 148, "aspect": "Bollard: Horiz. Red Rect", "onlyCountries": ["PL"] },
+      { "id": 172, "aspect": "USPS Blue Mailbox", "onlyCountries": ["US"] }
+    ]
+  },
+  {
+    "category": "Language",
+    "clues": [
+      { "id": 261, "aspect": "Cyrillic Alphabet", "excludeContinents": ["North America", "South America", "Oceania"], "excludeRegions": ["Western Europe"] },
+      { "id": 264, "aspect": "Hebrew Alphabet", "onlyCountries": ["IL"] },
+      { "id": 265, "aspect": "Hangul (Korean)", "onlyCountries": ["KR"] },
+      { "id": 266, "aspect": "Kanji/Kana (Japanese)", "onlyCountries": ["JP"] },
+      { "id": 268, "aspect": "Thai Script", "onlyCountries": ["TH"] },
+      { "id": 278, "aspect": "Polish Modifiers (Ł, Ś)", "onlyCountries": ["PL"] },
+      { "id": 276, "aspect": "Nordic Modifiers (Ø, Æ)", "onlyCountries": ["NO", "DK"] }
+    ]
+  }
+]
