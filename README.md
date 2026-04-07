@@ -20,14 +20,14 @@
 * **🚨 Contradiction Catcher**
   Prevents you from going down the wrong rabbit hole. If you select "Left-Hand Drive" and "Cyrillic Alphabet," the HUD will flag a data conflict.
 * **📋 After-Action Report (Exportable Logic)**
-  At the end of a round, click to copy your exact deduction path to your clipboard (e.g., `Left Drive + Yellow Rear Plate + Striped Bollard = UK`) to share in Discord.
+  At the end of a round, click to copy your exact deduction path to your clipboard (e.g., `Left Drive + Yellow Rear Plate + Striped Bollard = UK`) and share it in the issues of GitHub for the author to further improve the script and accuracy.
 
 ---
 
 ## 🚀 Installation
 
 1. Install the [Tampermonkey](https://www.tampermonkey.net/) extension for your browser (Chrome, Firefox, Edge, Safari).
-2. Click here to install the script: [Install OpenDeduce](#) *(Link this to your raw .user.js file later)*
+2. Click here to install the script: [Install OpenDeduce](#)
 3. Alternatively, create a new script in Tampermonkey and paste the contents of `opendeduce.user.js`.
 4. Open [OpenGuessr](https://openguessr.com/) and the overlay will automatically appear on the right side of your screen.
 
