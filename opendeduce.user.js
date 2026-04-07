@@ -5,6 +5,8 @@
 // @description  Geo-Deduction advisor with Movable, Minimizable HUD and fuzzy 3-letter search logic.
 // @author       OpenDeduce Team
 // @match        https://openguessr.com/*
+// @updateURL    https://raw.githubusercontent.com/AwesomeOddEven-NightKeys-LunarBlink/OpenDeduce---Openguessr-Advisor/main/opendeduce.user.js
+// @downloadURL  https://raw.githubusercontent.com/AwesomeOddEven-NightKeys-LunarBlink/OpenDeduce---Openguessr-Advisor/main/opendeduce.user.js
 // @grant        GM_addStyle
 // ==/UserScript==
 
@@ -156,11 +158,9 @@
      * DATABASE SYNC
      */
     function syncUI() {
-        // Sync Accordion Checkboxes
         document.querySelectorAll('.od-clue-item input').forEach(input => {
             input.checked = STATE.activeClueIds.has(input.dataset.clueId);
         });
-        
         renderActiveTags();
         updateSuspects();
     }
@@ -169,9 +169,7 @@
         const listContainer = document.querySelector('.od-country-list');
         const countLabel = document.getElementById('od-suspect-count');
         if(!listContainer) return;
-
         const results = STATE.countries.map(c => ({ ...c, score: 1.0 }));
-
         STATE.activeClueIds.forEach(id => {
             const rule = findRuleById(id);
             if (!rule) return;
@@ -188,10 +186,8 @@
                 if (!isMatch) country.score = Math.max(0, country.score * (1.0 - conf));
             });
         });
-
         const sorted = results.sort((a,b) => b.score - a.score).filter(c => c.score > 0.001);
         countLabel.innerText = `${sorted.length} Suspects Remaining`;
-        
         listContainer.innerHTML = sorted.map(c => {
             const pct = Math.round(c.score * 100);
             const color = pct > 70 ? '#10b981' : (pct > 30 ? '#f59e0b' : '#ef4444');
@@ -239,9 +235,7 @@
         STATE.activeClueIds.forEach(id => {
             const rule = findRuleById(id);
             if(!rule) return;
-            const tag = document.createElement('div');
-            tag.className = 'od-tag';
-            tag.innerText = rule.aspect;
+            const tag = document.createElement('div'); tag.className = 'od-tag'; tag.innerText = rule.aspect;
             tag.onclick = () => { STATE.activeClueIds.delete(id); syncUI(); };
             container.appendChild(tag);
         });
@@ -254,46 +248,26 @@
         const input = document.getElementById('od-global-search');
         const suggest = document.getElementById('od-suggestions');
         if(!input) return;
-
         input.oninput = (e) => {
             const val = e.target.value.toLowerCase().trim();
             if (val.length < 3) { suggest.style.display = 'none'; return; }
-
             const matches = [];
             STATE.rules.forEach(g => g.clues.forEach(c => { 
                 const searchable = [c.aspect, g.category, c.description||""].join(' ').toLowerCase();
-                // Pop out if fuzzy match (substring) exists
                 if (searchable.includes(val)) matches.push({...c, category: g.category});
             }));
-
             if(matches.length > 0) {
-                suggest.innerHTML = matches.slice(0, 10).map(m => `
-                    <div class="od-suggestion-item" data-id="${m.id}">
-                        <div style="font-size:0.6rem; color:#60a5fa; opacity:0.6; text-transform:uppercase">${m.category}</div>
-                        <div>${m.aspect}</div>
-                        <div style="font-size:0.6rem; opacity:0.4">${m.description ? m.description.substring(0,35)+'...' : ''}</div>
-                    </div>
-                `).join('');
+                suggest.innerHTML = matches.slice(0, 10).map(m => `<div class="od-suggestion-item" data-id="${m.id}"><div style="font-size:0.6rem; color:#60a5fa; opacity:0.6; text-transform:uppercase">${m.category}</div><div>${m.aspect}</div></div>`).join('');
                 suggest.style.display = 'block';
             } else suggest.style.display = 'none';
         };
-
         suggest.onclick = (e) => {
             const item = e.target.closest('.od-suggestion-item');
-            if(item) {
-                STATE.activeClueIds.add(item.dataset.id);
-                input.value = '';
-                suggest.style.display = 'none';
-                syncUI();
-            }
+            if(item) { STATE.activeClueIds.add(item.dataset.id); input.value = ''; suggest.style.display = 'none'; syncUI(); }
         };
-
         document.addEventListener('mousedown', (e) => { if(!input.contains(e.target)) suggest.style.display = 'none'; });
     }
 
-    /**
-     * HELPERS
-     */
     function findRuleById(id) { let r = null; STATE.rules.forEach(g => { const found = g.clues.find(c => c.id === id); if(found) r = found; }); return r; }
     function showTooltip(e, clue) {
         const tt = document.getElementById('od-tooltip');
@@ -305,31 +279,17 @@
     function hideTooltip() { document.getElementById('od-tooltip').style.display = 'none'; }
 
     async function init() {
-        // FULL MASTER LIST (195+ Countries)
         STATE.countries = [
-            {"id":"al","name":"Albania","continent":"Europe"},{"id":"at","name":"Austria","continent":"Europe"},{"id":"be","name":"Belgium","continent":"Europe"},{"id":"bg","name":"Bulgaria","continent":"Europe"},{"id":"hr","name":"Croatia","continent":"Europe"},{"id":"cz","name":"Czechia","continent":"Europe"},{"id":"dk","name":"Denmark","continent":"Europe"},{"id":"ee","name":"Estonia","continent":"Europe"},{"id":"fi","name":"Finland","continent":"Europe"},{"id":"fr","name":"France","continent":"Europe"},{"id":"de","name":"Germany","continent":"Europe"},{"id":"gr","name":"Greece","continent":"Europe"},{"id":"hu","name":"Hungary","continent":"Europe"},{"id":"is","name":"Iceland","continent":"Europe"},{"id":"ie","name":"Ireland","continent":"Europe"},{"id":"it","name":"Italy","continent":"Europe"},{"id":"lv","name":"Latvia","continent":"Europe"},{"id":"lt","name":"Lithuania","continent":"Europe"},{"id":"nl","name":"Netherlands","continent":"Europe"},{"id":"no","name":"Norway","continent":"Europe"},{"id":"pl","name":"Poland","continent":"Europe"},{"id":"pt","name":"Portugal","continent":"Europe"},{"id":"ro","name":"Romania","continent":"Europe"},{"id":"ru","name":"Russia","continent":"Asia"},{"id":"sk","name":"Slovakia","continent":"Europe"},{"id":"es","name":"Spain","continent":"Europe"},{"id":"se","name":"Sweden","continent":"Europe"},{"id":"ch","name":"Switzerland","continent":"Europe"},{"id":"tr","name":"Turkey","continent":"Europe"},{"id":"uk","name":"United Kingdom","continent":"Europe"},{"id":"af","name":"Afghanistan","continent":"Asia"},{"id":"bd","name":"Bangladesh","continent":"Asia"},{"id":"id","name":"Indonesia","continent":"Asia"},{"id":"jp","name":"Japan","continent":"Asia"},{"id":"my","name":"Malaysia","continent":"Asia"},{"id":"ph","name":"Philippines","continent":"Asia"},{"id":"kr","name":"South Korea","continent":"Asia"},{"id":"th","name":"Thailand","continent":"Asia"},{"id":"us","name":"United States","continent":"North America"},{"id":"ca","name":"Canada","continent":"North America"},{"id":"mx","name":"Mexico","continent":"North America"},{"id":"br","name":"Brazil","continent":"South America"},{"id":"ar","name":"Argentina","continent":"South America"},{"id":"cl","name":"Chile","continent":"South America"},{"id":"za","name":"South Africa","continent":"Africa"},{"id":"au","name":"Australia","continent":"Oceania"},{"id":"nz","name":"New Zealand","continent":"Oceania"}
+            {"id":"al","name":"Albania","continent":"Europe"},{"id":"at","name":"Austria","continent":"Europe"},{"id":"be","name":"Belgium","continent":"Europe"},{"id":"bg","name":"Bulgaria","continent":"Europe"},{"id":"hr","name":"Croatia","continent":"Europe"},{"id":"cz","name":"Czechia","continent":"Europe"},{"id":"dk","name":"Denmark","continent":"Europe"},{"id":"ee","name":"Estonia","continent":"Europe"},{"id":"fi","name":"Finland","continent":"Europe"},{"id":"fr","name":"France","continent":"Europe"},{"id":"de","name":"Germany","continent":"Europe"},{"id":"gr","name":"Greece","continent":"Europe"},{"id":"hu","name":"Hungary","continent":"Europe"},{"id":"is","name":"Iceland","continent":"Europe"},{"id":"ie","name":"Ireland","continent":"Europe"},{"id":"it","name":"Italy","continent":"Europe"},{"id":"lv","name":"Latvia","continent":"Europe"},{"id":"lt","name":"Lithuania","continent":"Europe"},{"id":"nl","name":"Netherlands","continent":"Europe"},{"id":"no","name":"Norway","continent":"Europe"},{"id":"pl","name":"Poland","continent":"Europe"},{"id":"pt","name":"Portugal","continent":"Europe"},{"id":"ro","name":"Romania","continent":"Europe"},{"id":"ru","name":"Russia","continent":"Asia"},{"id":"sk","name":"Slovakia","continent":"Europe"},{"id":"es","name":"Spain","continent":"Europe"},{"id":"se","name":"Sweden","continent":"Europe"},{"id":"ch","name":"Switzerland","continent":"Europe"},{"id":"tr","name":"Turkey","continent":"Europe"},{"id":"uk","name":"United Kingdom","continent":"Europe"},{"id":"us","name":"United States","continent":"North America"},{"id":"ca","name":"Canada","continent":"North America"},{"id":"mx","name":"Mexico","continent":"North America"},{"id":"br","name":"Brazil","continent":"South America"},{"id":"ar","name":"Argentina","continent":"South America"},{"id":"cl","name":"Chile","continent":"South America"},{"id":"za","name":"South Africa","continent":"Africa"},{"id":"au","name":"Australia","continent":"Oceania"},{"id":"nz","name":"New Zealand","continent":"Oceania"}
         ];
 
-        // EXPANDED META DATABASE (300+ Rules)
         STATE.rules = [
             { "category": "Global Essentials", "clues": [ 
                 { "id":"g1", "aspect":"Driving Side: Left", "confidence":1.0, "excludeRegions":["Mainland Europe"], "excludeContinents":["North America","South America"] },
-                { "id":"g2", "aspect":"Driving Side: Right", "confidence":1.0, "excludeCountries":["UK","IE","AU","NZ","ZA","JP","MY","ID","TH"] },
-                { "id":"g3", "aspect":"Sun Position: North", "confidence":1.0, "excludeContinents":["North America"], "excludeRegions":["Europe"] }
+                { "id":"g2", "aspect":"Driving Side: Right", "confidence":1.0, "excludeCountries":["UK","IE","AU","NZ","ZA","JP","MY","ID","TH"] }
             ]},
             { "category": "Flora & Visual Botany", "clues": [ 
-                { "id":"t1", "aspect":"Jacaranda (Violet)", "description":"Lush violet flowers. Key in SA and S.America.", "image":"https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Jacaranda_mimosifolia_flowers.jpg/1024px-Jacaranda_mimosifolia_flowers.jpg", "excludeContinents":["Europe"], "confidence":0.8 },
-                { "id":"t2", "aspect":"Banyan Tree", "description":"Dangling aerial roots.", "image":"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Banyan_tree_in_Hawaii.jpg/1024px-Banyan_tree_in_Hawaii.jpg", "onlyCountries":["IN","TH","ID","LK"], "confidence":1.0 },
-                { "id":"t108", "aspect":"Joshua Tree", "description":"Spiky desert yucca.", "image":"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Joshua_Tree_2.jpg/1024px-Joshua_Tree_2.jpg", "onlyCountries":["US"], "confidence":1.0 }
-            ]},
-            { "category": "Commercial & Transit", "clues": [ 
-                { "id":"p2-1", "aspect":"Pharmacy: Green LED Cross", "description":"Typical in European urban areas.", "excludeContinents":["North America","Oceania"], "confidence":0.95 },
-                { "id":"p2-17", "aspect":"Indomaret / Alfamart", "description":"Iconic convenience stores.", "onlyCountries":["ID"], "confidence":1.0 },
-                { "id":"p2-35", "aspect":"Bus: Red Double Decker", "description":"London classic.", "onlyCountries":["UK"], "confidence":0.95 }
-            ]},
-            { "category": "Architecture & Art", "clues": [ 
-                { "id":"p2-235", "aspect":"Pichação Graffiti", "description":"Runic-style black graffiti.", "image":"https://upload.wikimedia.org/wikipedia/commons/d/d3/Picha%C3%A7%C3%A3o_at_SESC_Vila_Mariana.jpg", "onlyCountries":["BR"], "confidence":1.0 },
-                { "id":"p2-285", "aspect":"Stobie Pole", "description":"Steel/concrete power poles.", "onlyCountries":["AU"], "confidence":1.0 }
+                { "id":"t1", "aspect":"Jacaranda (Violet)", "description":"Lush violet flowers.", "image":"https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Jacaranda_mimosifolia_flowers.jpg/1024px-Jacaranda_mimosifolia_flowers.jpg", "excludeContinents":["Europe"], "confidence":0.8 }
             ]}
         ];
 
@@ -338,41 +298,26 @@
         panel.id = 'od-v2-panel';
         panel.innerHTML = `
             <div class="od-header">
-                <div class="od-header-main"><span class="od-badge">Advisor v1.0.0</span><h1 class="od-title">OpenDeduce</h1></div>
+                <div class="od-header-main"><span class="od-badge">Geographic Advisor v1.0.0</span><h1 class="od-title">OpenDeduce</h1></div>
                 <div class="od-controls">
                     <div class="od-control-btn od-reset-btn" id="od-reset-btn" title="Reset">🔄</div>
                     <div class="od-control-btn" id="od-minimize-btn" title="Minimise">—</div>
                 </div>
             </div>
             <div id="od-hud-body">
-                <div class="od-search-container">
-                    <input type="text" id="od-global-search" class="od-input" placeholder="Type 3+ letters to search...">
-                    <div id="od-suggestions" class="od-suggestions"></div>
-                </div>
+                <div class="od-search-container"><input type="text" id="od-global-search" class="od-input" placeholder="Type 3+ letters..."><div id="od-suggestions" class="od-suggestions"></div></div>
                 <div class="od-active-container"></div>
                 <div class="od-content"></div>
-                <div class="od-results">
-                    <div class="od-res-header"><span id="od-suspect-count">Calculating...</span><span>Likelihood</span></div>
-                    <div class="od-country-list"></div>
-                </div>
+                <div class="od-results"><div class="od-res-header"><span id="od-suspect-count">Calculating...</span><span>Likelihood</span></div><div class="od-country-list"></div></div>
             </div>`;
         document.body.appendChild(panel);
-        
         const tt = document.createElement('div'); tt.id = 'od-tooltip'; document.body.appendChild(tt);
-
-        // ATTACH EVENT LISTENERS
         document.getElementById('od-reset-btn').addEventListener('click', () => { STATE.activeClueIds.clear(); syncUI(); });
         document.getElementById('od-minimize-btn').addEventListener('click', () => {
             panel.classList.toggle('minimized');
             document.getElementById('od-hud-body').style.display = panel.classList.contains('minimized') ? 'none' : 'block';
         });
-
-        setupDragAndDrop(panel);
-        renderClues();
-        updateSuspects();
-        setupSearch();
-        STATE.isLoaded = true;
+        setupDragAndDrop(panel); renderClues(); updateSuspects(); setupSearch();
     }
-
     init();
 })();
