@@ -5,9 +5,9 @@
 // @description  Geo-Deduction Engine v1.0.0 - Forensic Rebuild 501-1000 with Equal-Slice Bayesian Scoring.
 // @author       OpenDeduce Team
 // @match        https://openguessr.com/*
-// @updateURL    https://raw.githubusercontent.com/AwesomeOddEven-NightKeys-LunarBlink/OpenDeduce---Openguessr-Advisor/main/opendeduce.user.js
-// @downloadURL  https://raw.githubusercontent.com/AwesomeOddEven-NightKeys-LunarBlink/OpenDeduce---Openguessr-Advisor/main/opendeduce.user.js
-// @resource     DATABASE https://raw.githubusercontent.com/AwesomeOddEven-NightKeys-LunarBlink/OpenDeduce---Openguessr-Advisor/main/rules.json
+// @updateURL    https://raw.githack.com/AwesomeOddEven-NightKeys-LunarBlink/OpenDeduce_OpenGuessr-Advisor/main/opendeduce.user.js
+// @downloadURL  https://raw.githack.com/AwesomeOddEven-NightKeys-LunarBlink/OpenDeduce_OpenGuessr-Advisor/main/opendeduce.user.js
+// @resource     DATABASE https://raw.githack.com/AwesomeOddEven-NightKeys-LunarBlink/OpenDeduce_OpenGuessr-Advisor/main/rules.json
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
 // ==/UserScript==

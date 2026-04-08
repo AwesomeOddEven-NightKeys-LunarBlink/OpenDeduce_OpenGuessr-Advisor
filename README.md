@@ -27,7 +27,7 @@
 ## 🚀 Installation
 
 1. Install the [Tampermonkey](https://www.tampermonkey.net/) extension for your browser (Chrome, Firefox, Edge, Safari).
-2. Click here to install the script: [Install OpenDeduce](#)
+2. Click here to install the script: [Install OpenDeduce](https://raw.githack.com/AwesomeOddEven-NightKeys-LunarBlink/OpenDeduce_OpenGuessr-Advisor/main/opendeduce.user.js)
 3. Alternatively, create a new script in Tampermonkey and paste the contents of `opendeduce.user.js`.
 4. Open [OpenGuessr](https://openguessr.com/) and the overlay will automatically appear on the right side of your screen.
 
