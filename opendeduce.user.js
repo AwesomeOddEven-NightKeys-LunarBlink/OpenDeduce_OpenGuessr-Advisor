@@ -94,8 +94,13 @@
         .od-score { font-family: 'JetBrains Mono'; font-weight: 800; color: #10b981; }
         .od-advice-box { padding: 12px 24px; font-size: 0.75rem; border-top: 1px solid #ffffff08; background: #ffffff03; color: #94a3b8; }
         .od-advice-tag { color: #60a5fa; font-weight: 800; cursor: pointer; }
-        .od-preview-icon { opacity: 0.6; transition: 0.2s; cursor: pointer; padding: 2px; border-radius: 4px; border: 1px solid #ffffff11; }
-        .od-preview-icon:hover { opacity: 1; transform: scale(1.1); background: #60a5fa22; }
+        .od-preview-icon { 
+            opacity: 0.8; transition: 0.2s; cursor: pointer; padding: 4px 8px; border-radius: 8px; 
+            background: rgba(96,165,250, 0.2); border: 1px solid rgba(96,165,250, 0.4);
+            font-size: 0.65rem; color: #fff; display: flex; align-items: center; gap: 4px;
+        }
+        .od-preview-icon:hover { opacity: 1; transform: scale(1.05); background: #60a5fa44; border-color: #60a5fa; }
+        .od-preview-icon::before { content: "📷"; font-size: 0.8rem; }
         #od-modal { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
@@ -175,8 +180,9 @@
             prob: totalWeight > 0 ? (s.weight / totalWeight) * 100 : 0
         })).sort((a,b) => b.prob - a.prob);
 
+        // Confidence Calculation (Gap between #1 and #2)
         const confidence = (sorted.length > 1) ? (sorted[0].prob - sorted[1].prob) : sorted[0].prob;
-        countText.innerHTML = `${sorted.filter(s=>s.prob > 1).length} Suspects | <span style="color:${confidence > 30 ? '#10b981' : '#f59e0b'}">Confidence: ${Math.round(confidence)}%</span>`;
+        countText.innerHTML = `${sorted.filter(s=>s.prob > 1).length} Suspects | <span style="color:${confidence > 30 ? '#10b981' : '#f59e0b'}">Conf: ${Math.round(confidence)}%</span>`;
         
         const survivors = sorted.filter(s => s.prob > 0).length;
         meter.style.width = ((survivors / STATE.countries.length) * 100) + '%';
@@ -200,9 +206,9 @@
             if(matches.length > 0) {
                 s.innerHTML = matches.slice(0, 15).map(m => `
                     <div class="od-suggestion-item" data-id="${m.id}" data-img="${m.img||''}">
-                        <div style="font-size:0.6rem; color:#60a5fa; display:flex; justify-content:space-between;">
+                        <div style="font-size:0.6rem; color:#60a5fa; display:flex; justify-content:space-between; align-items:center;">
                             <span>${m.category}</span>
-                            ${m.img ? '<span class="od-preview-icon">🖼️</span>' : ''}
+                            ${m.img ? '<span class="od-preview-icon">VIEW</span>' : ''}
                         </div>
                         ${m.aspect}
                     </div>`).join('');
@@ -231,7 +237,7 @@
                 l.innerHTML = `
                     <input type="checkbox" data-clue-id="${cl.id}" ${STATE.activeClueIds.has(cl.id)?'checked':''}>
                     <span>${cl.aspect}</span>
-                    ${cl.img ? '<span class="od-preview-icon">🖼️</span>' : '<span></span>'}
+                    ${cl.img ? '<span class="od-preview-icon">VIEW</span>' : '<span></span>'}
                 `;
                 l.querySelector('input').onclick = (ev) => { if(ev.target.checked) STATE.activeClueIds.add(cl.id); else STATE.activeClueIds.delete(cl.id); syncUI(); };
                 b.appendChild(l);
