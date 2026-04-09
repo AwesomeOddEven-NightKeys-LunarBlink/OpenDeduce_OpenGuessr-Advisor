@@ -94,14 +94,27 @@
         .od-score { font-family: 'JetBrains Mono'; font-weight: 800; color: #10b981; }
         .od-advice-box { padding: 12px 24px; font-size: 0.75rem; border-top: 1px solid #ffffff08; background: #ffffff03; color: #94a3b8; }
         .od-advice-tag { color: #60a5fa; font-weight: 800; cursor: pointer; }
-        .od-preview-icon { opacity: 0.5; transition: 0.2s; }
-        .od-preview-icon:hover { opacity: 1; transform: scale(1.2); }
-        #od-tooltip { 
-            position: fixed; pointer-events: none; z-index: 10002; display: none;
-            background: #121218; border: 1px solid #ffffff33; border-radius: 15px;
-            padding: 8px; box-shadow: 0 20px 60px #000; max-width: 250px;
+        .od-preview-icon { opacity: 0.6; transition: 0.2s; cursor: pointer; padding: 2px; border-radius: 4px; border: 1px solid #ffffff11; }
+        .od-preview-icon:hover { opacity: 1; transform: scale(1.1); background: #60a5fa22; }
+        #od-modal { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+            z-index: 10005; display: none; align-items: center; justify-content: center;
         }
-        #od-tooltip img { width: 100%; border-radius: 10px; display: block; }
+        .od-modal-content { 
+            background: #121218; border: 1px solid #ffffff33; border-radius: 30px;
+            padding: 24px; box-shadow: 0 40px 120px #000; max-width: 90vw; max-height: 90vh;
+            display: flex; flex-direction: column; align-items: center; position: relative;
+        }
+        .od-modal-content img { max-width: 100%; max-height: 70vh; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .od-modal-close { position: absolute; top: 20px; right: 20px; font-size: 1.5rem; color: #fff; cursor: pointer; opacity: 0.6; }
+        .od-modal-close:hover { opacity: 1; }
+        .od-conflict-banner { 
+            margin: 0 24px 18px; padding: 12px 18px; background: rgba(239, 68, 68, 0.15); 
+            border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 16px; color: #f87171;
+            font-size: 0.75rem; font-weight: 700; display: none; animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
     `;
 
     /**
@@ -142,19 +155,28 @@
 
                 if (!isMatch) evidenceScore = CONFIG.PENALTY_FLOOR;
 
-                s.weight *= evidenceScore;
+                // 3. Narrowness Factor (Specificity Multiplier)
+                // Rules that match fewer people are more "valuable"
+                const specCount = (rule.onlyCountries?.length || rule.likelyCountries?.length || 50);
+                const specBonus = Math.max(1, 5 / specCount); // Up to 5x pull for very narrow clues
+                
+                s.weight *= (evidenceScore * specBonus);
             });
         });
 
         // Proportional Normalization for Conflicts
         const totalWeight = suspects.reduce((acc, s) => acc + s.weight, 0);
+        
+        // Conflict Detection (Simple version for UI)
+        checkConflict(suspects);
+
         const sorted = suspects.map(s => ({
             ...s,
             prob: totalWeight > 0 ? (s.weight / totalWeight) * 100 : 0
         })).sort((a,b) => b.prob - a.prob);
 
-        const hiProb = sorted.filter(s => s.prob > 1).length;
-        countText.innerText = `${hiProb} Forensic Suspects`;
+        const confidence = (sorted.length > 1) ? (sorted[0].prob - sorted[1].prob) : sorted[0].prob;
+        countText.innerHTML = `${sorted.filter(s=>s.prob > 1).length} Suspects | <span style="color:${confidence > 30 ? '#10b981' : '#f59e0b'}">Confidence: ${Math.round(confidence)}%</span>`;
         
         const survivors = sorted.filter(s => s.prob > 0).length;
         meter.style.width = ((survivors / STATE.countries.length) * 100) + '%';
@@ -216,28 +238,41 @@
             });
             container.appendChild(acc);
         });
-        setupTooltips();
+        setupModalListeners();
     }
 
-    function setupTooltips() {
-        const tooltip = document.getElementById('od-tooltip');
-        const items = document.querySelectorAll('[data-img]');
-        items.forEach(item => {
-            const imgUrl = item.dataset.img;
-            if (!imgUrl) return;
-            item.onmouseenter = (e) => {
-                const img = tooltip.querySelector('img');
-                img.src = imgUrl;
-                tooltip.style.display = 'block';
-            };
-            item.onmousemove = (e) => {
-                tooltip.style.left = (e.clientX + 20) + 'px';
-                tooltip.style.top = (e.clientY - 50) + 'px';
-            };
-            item.onmouseleave = () => {
-                tooltip.style.display = 'none';
+    function checkConflict(suspects) {
+        const banner = document.getElementById('od-conflict');
+        if (!banner) return;
+        
+        // A conflict is defined here as "Zero high-probability suspects remaining" 
+        // while active clues are selected.
+        const survivors = suspects.filter(s => s.weight > 0.01).length;
+        if (STATE.activeClueIds.size > 1 && survivors === 0) {
+            banner.style.display = 'block';
+            banner.innerText = "🚨 Logic Conflict! No country matches all selected forensic markers perfectly.";
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+
+    function setupModalListeners() {
+        const modal = document.getElementById('od-modal');
+        const img = modal.querySelector('img');
+        
+        document.querySelectorAll('.od-preview-icon').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                const clueItem = btn.closest('[data-img]');
+                if (clueItem && clueItem.dataset.img) {
+                    img.src = clueItem.dataset.img;
+                    modal.style.display = 'flex';
+                }
             };
         });
+
+        modal.onclick = (e) => { if (e.target === modal || e.target.classList.contains('od-modal-close')) modal.style.display = 'none'; };
     }
 
     function syncUI() {
@@ -335,13 +370,14 @@
             <div id="od-hud-body" style="display:${STATE.isMinimized?'none':'block'}">
                 <div class="od-search-box"><input type="text" id="od-search" class="od-input" placeholder="Search Rules 1,000+ Forensic Clues...">
                 <div id="od-suggest" class="od-suggestions"></div></div>
+                <div id="od-conflict" class="od-conflict-banner"></div>
                 <div class="od-active-bar"></div>
                 <div id="od-advice" class="od-advice-box"></div>
                 <div class="od-content" id="od-content"></div>
                 <div class="od-footer"><div class="od-res-meta"><span id="od-count">Calibrating Forensic Matrix...</span><span>Prob. Density</span></div>
                 <div class="od-meter-wrap"><div class="od-meter-fill" id="od-meter"></div></div><div class="od-suspect-list"></div></div>
             </div>
-            <div id="od-tooltip"><img></div>`;
+            <div id="od-modal"><div class="od-modal-content"><span class="od-modal-close">&times;</span><img></div></div>`;
         document.body.appendChild(p);
         document.getElementById('od-reset').onclick = () => { STATE.activeClueIds.clear(); syncUI(); };
         document.getElementById('od-export').onclick = exportTrace;
