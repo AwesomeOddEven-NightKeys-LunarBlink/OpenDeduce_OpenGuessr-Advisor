@@ -124,23 +124,26 @@
 
     /**
      * EQUAL-SLICE REDISTRIBUTION LOGIC
+     */
     function updateScoring() {
         const container = document.querySelector(".od-suspect-list"), meter = document.getElementById("od-meter"), countText = document.getElementById("od-count");
         if (!container) return;
 
         // Base weight tracking for delta display
         const totalWOld = STATE.countries.reduce((a, b) => a + (b.weight || 0), 0);
-        const oldProbs = STATE.countries.map(s => ({ 
+        const prevProbs = STATE.countries.map(s => ({ 
             id: s.id, 
             p: totalWOld > 0 ? (s.weight / totalWOld * 100) : (100 / STATE.countries.length) 
         }));
 
+        // Reset weights
         STATE.countries.forEach(c => c.weight = 1.0);
         const suspects = STATE.countries;
+
         STATE.activeClueIds.forEach(id => {
             let rule = null, category = "default"; 
             STATE.rules.forEach(g => { 
-                const found = g.clues.find(c=>c.id===id); 
+                const found = g.clues.find(cl=>cl.id===id); 
                 if(found) { rule = found; category = g.category; }
             });
             if (!rule) return;
@@ -156,7 +159,7 @@
                     evidenceScore = rule.likelyCountries.includes(countryId) ? (1 + trust * 10) : (1 - trust * 0.5);
                 }
 
-                // 2. Hard-Lock Simulation (as requested: 0.1% instead of hard 0)
+                // 2. Hard-Lock Simulation
                 let isMatch = true;
                 if (rule.onlyCountries?.length > 0 && !rule.onlyCountries.includes(countryId)) isMatch = false;
                 if (rule.onlyContinents?.length > 0 && !rule.onlyContinents.includes(s.continent)) isMatch = false;
@@ -167,10 +170,9 @@
 
                 // 3. Narrowness Factor (Specificity Multiplier)
                 const specCount = (rule.onlyCountries?.length || rule.likelyCountries?.length || 50);
-                const specBonus = Math.max(1, 10 / specCount); // Increased to 10x for rare clues
+                const specBonus = Math.max(1, 10 / specCount);
                 
-                // 4. Rarity Multiplier (New Logic)
-                // If a clue matches very few countries compared to the continent, boost it.
+                // 4. Rarity Multiplier
                 let rarityBonus = 1.0;
                 if (rule.likelyCountries?.length < 20) rarityBonus = 2.0;
                 if (rule.onlyCountries?.length < 5) rarityBonus = 5.0;
@@ -179,10 +181,9 @@
             });
         });
 
-        // Proportional Normalization for Conflicts
         const totalWeight = suspects.reduce((acc, s) => acc + s.weight, 0);
         
-        // Conflict Detection (Simple version for UI)
+        // Conflict Detection
         checkConflict(suspects);
 
         const sorted = suspects.map(s => ({
@@ -190,7 +191,6 @@
             prob: totalWeight > 0 ? (s.weight / totalWeight) * 100 : 0
         })).sort((a,b) => b.prob - a.prob);
 
-        // Confidence Calculation (Gap between #1 and #2)
         const confidence = (sorted.length > 1) ? (sorted[0].prob - sorted[1].prob) : sorted[0].prob;
         countText.innerHTML = `${sorted.filter(s=>s.prob > 1).length} Suspects | <span style="color:${confidence > 30 ? '#10b981' : '#f59e0b'}">Conf: ${Math.round(confidence)}%</span>`;
         
@@ -204,7 +204,6 @@
             const deltaStr = (Math.abs(delta) > 0.5) ? (delta > 0 ? `<span style="color:#10b981; font-size:0.6rem; margin-right:8px;">+${Math.round(delta)}%</span>` : `<span style="color:#f87171; font-size:0.6rem; margin-right:8px;">${Math.round(delta)}%</span>`) : "";
 
             return `<div class="od-suspect-row" style="opacity:${opacity}"><span>${deltaStr}${s.name}</span><span class="od-score">${Math.round(s.prob)}%</span></div>`;
-        }).join('');
         }).join('');
     }
 
