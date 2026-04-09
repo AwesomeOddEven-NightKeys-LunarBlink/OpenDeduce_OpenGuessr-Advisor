@@ -215,13 +215,14 @@
         });
 
         const totalWeight = suspects.reduce((acc, s) => acc + s.weight, 0);
+        const epsilon = 1e-10; // Guard against NaN
         
         // Conflict Detection
         checkConflict(suspects);
 
         const sorted = suspects.map(s => ({
             ...s,
-            prob: totalWeight > 0 ? (s.weight / totalWeight) * 100 : 0
+            prob: totalWeight > epsilon ? (s.weight / totalWeight) * 100 : 0
         })).sort((a,b) => b.prob - a.prob);
 
         const confidence = (sorted.length > 1) ? (sorted[0].prob - sorted[1].prob) : sorted[0].prob;
@@ -247,12 +248,26 @@
             const t = text.toLowerCase(), query = q.toLowerCase();
             if (t === query) return 100;
             if (t.includes(query)) return 80;
-            // Fuzzy: check for character overlap and partial words
-            const words = query.split(" ");
-            let matchCount = 0;
-            words.forEach(w => { if (t.includes(w)) matchCount++; });
-            if (matchCount > 0) return 40 + (matchCount * 10);
+            
+            // Bigram overlap for typo tolerance
+            const getBigrams = (str) => {
+                let bigrams = new Set();
+                for (let i = 0; i < str.length - 1; i++) bigrams.add(str.substring(i, i + 2));
+                return bigrams;
+            };
+            const b1 = getBigrams(query), b2 = getBigrams(t);
+            let intersect = 0;
+            for (let b of b1) if (b2.has(b)) intersect++;
+            if (intersect > 0) return (intersect / b1.size) * 60;
+            
             return 0;
+        };
+
+        i.onkeydown = (e) => {
+            if (e.key === 'Enter') { 
+                s.style.display = 'none'; 
+                i.blur(); 
+            }
         };
 
         i.oninput = (e) => {
