@@ -15,6 +15,30 @@
 (function() {
     'use strict';
 
+    const CONFIG = {
+        TRUST: {
+            "Infrastructure": 0.98,
+            "License Plates": 0.95,
+            "Bollards": 0.90,
+            "European Bollards": 0.92,
+            "Road Markings": 0.90,
+            "Utility Poles": 0.88,
+            "Language & Script": 0.95,
+            "Google Car Meta": 0.98,
+            "Phone Codes": 0.99,
+            "Internet TLDs": 0.99,
+            "Surgical Infrastructure": 0.95,
+            "Advanced Urbanisms & Paving Systems Block": 0.85,
+            "Commercial Logistics & Shopfront Archetypes Block": 0.80,
+            "Social & Cultural Markers Block": 0.75,
+            "Advanced Physical Geography & Atmospheric Conditions Block": 0.40,
+            "Environmental & Nature Block": 0.35,
+            "Landscape": 0.45,
+            "default": 0.50
+        },
+        PENALTY_FLOOR: 0.001 // 0.1% floor instead of hard zero
+    };
+
     const STATE = {
         countries: [],
         rules: [],
@@ -65,6 +89,8 @@
         .od-suspect-list { max-height: 200px; overflow-y: auto; scrollbar-width: thin; }
         .od-suspect-row { display: flex; justify-content: space-between; padding: 10px 8px; border-radius: 12px; font-size: 0.95rem; margin-bottom: 4px; transition: 0.2s; }
         .od-score { font-family: 'JetBrains Mono'; font-weight: 800; color: #10b981; }
+        .od-advice-box { padding: 12px 24px; font-size: 0.75rem; border-top: 1px solid #ffffff08; background: #ffffff03; color: #94a3b8; }
+        .od-advice-tag { color: #60a5fa; font-weight: 800; cursor: pointer; }
     `;
 
     /**
@@ -78,33 +104,38 @@
         const suspects = STATE.countries.map(c => ({...c, weight: 1.0}));
 
         STATE.activeClueIds.forEach(id => {
-            let rule = null; STATE.rules.forEach(g => { const found = g.clues.find(c=>c.id===id); if(found) rule = found; });
+            let rule = null, category = "default"; 
+            STATE.rules.forEach(g => { 
+                const found = g.clues.find(c=>c.id===id); 
+                if(found) { rule = found; category = g.category; }
+            });
             if (!rule) return;
+
+            const trust = CONFIG.TRUST[category] || CONFIG.TRUST.default;
 
             suspects.forEach(s => {
                 const countryId = s.id.toUpperCase();
+                let evidenceScore = 1.0;
 
-                // Soft-Boost Logic (bayesian weight)
+                // 1. Soft-Boost Logic (bayesian weight)
                 if (rule.likelyCountries?.length > 0) {
-                    if (rule.likelyCountries.includes(countryId)) {
-                        s.weight *= 20; // 20x probability boost
-                    } else {
-                        s.weight *= 0.5; // Slight penalty for non-targets
-                    }
+                    evidenceScore = rule.likelyCountries.includes(countryId) ? (1 + trust * 10) : (1 - trust * 0.5);
                 }
 
-                // Hard-Lock Logic (legacy/mandatory)
+                // 2. Hard-Lock Simulation (as requested: 0.1% instead of hard 0)
                 let isMatch = true;
                 if (rule.onlyCountries?.length > 0 && !rule.onlyCountries.includes(countryId)) isMatch = false;
                 if (rule.onlyContinents?.length > 0 && !rule.onlyContinents.includes(s.continent)) isMatch = false;
                 if (rule.excludeCountries?.length > 0 && rule.excludeCountries.includes(countryId)) isMatch = false;
                 if (rule.excludeContinents?.length > 0 && rule.excludeContinents.includes(s.continent)) isMatch = false;
 
-                if (!isMatch) s.weight = 0;
+                if (!isMatch) evidenceScore = CONFIG.PENALTY_FLOOR;
+
+                s.weight *= evidenceScore;
             });
         });
 
-        // Normalize and Redistribute
+        // Proportional Normalization for Conflicts
         const totalWeight = suspects.reduce((acc, s) => acc + s.weight, 0);
         const sorted = suspects.map(s => ({
             ...s,
@@ -174,6 +205,56 @@
             bar.appendChild(t);
         });
         updateScoring();
+        updateAdvice(bar);
+    }
+
+    function updateAdvice(activeBar) {
+        const adviceContainer = document.getElementById('od-advice');
+        if (!adviceContainer) return;
+
+        const currentSuspects = Array.from(document.querySelectorAll('.od-suspect-row'))
+            .filter(r => parseFloat(r.querySelector('.od-score').innerText) > 1)
+            .map(r => r.querySelector('span').innerText);
+
+        if (currentSuspects.length <= 1 || currentSuspects.length > 50) {
+            adviceContainer.style.display = 'none';
+            return;
+        }
+
+        // Calculate entropy: find category with most varying clues for remaining suspects
+        let bestCat = "", maxGain = 0;
+        STATE.rules.forEach(g => {
+            const usefulClues = g.clues.filter(c => !STATE.activeClueIds.has(c.id));
+            if (usefulClues.length > maxGain) {
+                maxGain = usefulClues.length;
+                bestCat = g.category;
+            }
+        });
+
+        adviceContainer.style.display = 'block';
+        adviceContainer.innerHTML = `Best next move: Look for <span class="od-advice-tag">${bestCat}</span> clues.`;
+        adviceContainer.querySelector('.od-advice-tag').onclick = () => {
+            const input = document.getElementById('od-search');
+            input.value = bestCat;
+            input.dispatchEvent(new Event('input'));
+        };
+    }
+
+    function exportTrace() {
+        const suspects = Array.from(document.querySelectorAll('.od-suspect-row'))
+            .slice(0, 3)
+            .map(r => `${r.querySelector('span').innerText} (${r.querySelector('.od-score').innerText})`)
+            .join(', ');
+        
+        const clues = Array.from(STATE.activeClueIds)
+            .map(id => {
+                let found = ""; STATE.rules.forEach(g => { const c = g.clues.find(cl=>cl.id===id); if(c) found = c.aspect; });
+                return found;
+            }).join(' + ');
+
+        const report = `OpenDeduce Forensic Trace:\nLogic: ${clues || 'None'}\nSuspects: ${suspects}\nVerified at: ${new Date().toLocaleTimeString()}`;
+        navigator.clipboard.writeText(report);
+        alert("Forensic Trace copied to clipboard!");
     }
 
     function setupDrag(el) {
@@ -203,17 +284,20 @@
         p.style.top = STATE.pos.top + 'px'; p.style.left = STATE.pos.left !== null ? STATE.pos.left + 'px' : 'auto'; p.style.right = STATE.pos.right !== 'auto' ? STATE.pos.right + 'px' : 'auto';
         if(STATE.isMinimized) p.classList.add('minimized');
         p.innerHTML = `
-            <div class="od-header"><div class="od-title-grp"><span class="od-badge">Scalpel v1.0.0</span><h1 class="od-title">OpenDeduce</h1></div>
-            <div class="od-controls"><div class="od-btn" id="od-reset">🔄</div><div class="od-btn" id="od-min">—</div></div></div>
+            <div class="od-header"><div class="od-title-grp"><span class="od-badge">Scalpel v1.1.0</span><h1 class="od-title">OpenDeduce</h1></div>
+            <div class="od-controls"><div class="od-btn" id="od-export" title="Export Trace">📋</div><div class="od-btn" id="od-reset">🔄</div><div class="od-btn" id="od-min">—</div></div></div>
             <div id="od-hud-body" style="display:${STATE.isMinimized?'none':'block'}">
-                <div class="od-search-box"><input type="text" id="od-search" class="od-input" placeholder="Search Rules 501-1,000...">
+                <div class="od-search-box"><input type="text" id="od-search" class="od-input" placeholder="Search Rules 1,000+ Forensic Clues...">
                 <div id="od-suggest" class="od-suggestions"></div></div>
-                <div class="od-active-bar"></div><div class="od-content" id="od-content"></div>
+                <div class="od-active-bar"></div>
+                <div id="od-advice" class="od-advice-box"></div>
+                <div class="od-content" id="od-content"></div>
                 <div class="od-footer"><div class="od-res-meta"><span id="od-count">Calibrating Forensic Matrix...</span><span>Prob. Density</span></div>
                 <div class="od-meter-wrap"><div class="od-meter-fill" id="od-meter"></div></div><div class="od-suspect-list"></div></div>
             </div>`;
         document.body.appendChild(p);
         document.getElementById('od-reset').onclick = () => { STATE.activeClueIds.clear(); syncUI(); };
+        document.getElementById('od-export').onclick = exportTrace;
         document.getElementById('od-min').onclick = () => { p.classList.toggle('minimized'); STATE.isMinimized = p.classList.contains('minimized'); document.getElementById('od-hud-body').style.display = STATE.isMinimized?'none':'block'; localStorage.setItem('od_min', STATE.isMinimized); };
         setupDrag(p); setupSearch(); syncUI();
     }
