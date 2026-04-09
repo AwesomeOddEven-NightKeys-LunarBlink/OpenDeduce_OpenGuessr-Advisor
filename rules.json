@@ -21908,6 +21908,175 @@
                     "img": "https://raw.githack.com/AwesomeOddEven-NightKeys-LunarBlink/OpenDeduce_OpenGuessr-Advisor/main/media/de_16t_sign.png"
                 }
             ]
+        },
+        {
+            "category": "Flora & Agricultural Forensics Block",
+            "clues": [
+                {
+                    "id": "flora-pine-0",
+                    "aspect": "Pine trees with long, flexible needles",
+                    "likelyCountries": [
+                        "NA",
+                        "EU",
+                        "RU"
+                    ]
+                },
+                {
+                    "id": "flora-birch-1",
+                    "aspect": "Birch trees with white, peeling bark",
+                    "likelyCountries": [
+                        "RU",
+                        "FI",
+                        "CA"
+                    ]
+                },
+                {
+                    "id": "flora-eucalyptus-2",
+                    "aspect": "Eucalyptus trees with smooth, grayish bark",
+                    "likelyCountries": [
+                        "AU",
+                        "ZA"
+                    ]
+                },
+                {
+                    "id": "flora-olive-3",
+                    "aspect": "Olive trees with gnarled trunks and silver leaves",
+                    "likelyCountries": [
+                        "IT",
+                        "GR",
+                        "ES",
+                        "PT"
+                    ]
+                },
+                {
+                    "id": "flora-baobab-4",
+                    "aspect": "Baobab trees with extremely thick trunks",
+                    "likelyCountries": [
+                        "MG",
+                        "ZA",
+                        "SN"
+                    ]
+                },
+                {
+                    "id": "flora-acacia-5",
+                    "aspect": "Acacia trees with flat tops",
+                    "likelyCountries": [
+                        "KE",
+                        "ZA",
+                        "TZ"
+                    ]
+                },
+                {
+                    "id": "flora-banyan-6",
+                    "aspect": "Banyan trees with hanging aerial roots",
+                    "likelyCountries": [
+                        "IN",
+                        "BD",
+                        "TH"
+                    ]
+                },
+                {
+                    "id": "flora-sakura-7",
+                    "aspect": "Cherry blossoms (Sakura)",
+                    "likelyCountries": [
+                        "JP",
+                        "KR"
+                    ]
+                },
+                {
+                    "id": "flora-rice-8",
+                    "aspect": "Rice paddies (terraced)",
+                    "likelyCountries": [
+                        "PH",
+                        "CN",
+                        "ID",
+                        "VN"
+                    ]
+                },
+                {
+                    "id": "flora-sunflowers-9",
+                    "aspect": "Fields of sunflowers",
+                    "likelyCountries": [
+                        "UA",
+                        "RU",
+                        "FR",
+                        "ES"
+                    ]
+                },
+                {
+                    "id": "flora-sugarcane-10",
+                    "aspect": "Sugar cane plantations",
+                    "likelyCountries": [
+                        "BR",
+                        "CU",
+                        "TH"
+                    ]
+                },
+                {
+                    "id": "flora-rubber-11",
+                    "aspect": "Rubber tree plantations (diagonal trunk cuts)",
+                    "likelyCountries": [
+                        "TH",
+                        "MY",
+                        "ID"
+                    ]
+                },
+                {
+                    "id": "flora-vineyard-12",
+                    "aspect": "Vineyards (orderly grape rows)",
+                    "likelyCountries": [
+                        "FR",
+                        "IT",
+                        "ES",
+                        "AR",
+                        "CL"
+                    ]
+                },
+                {
+                    "id": "flora-coffee-13",
+                    "aspect": "Coffee plantations (mountainous)",
+                    "likelyCountries": [
+                        "CO",
+                        "ET",
+                        "BR"
+                    ]
+                },
+                {
+                    "id": "flora-picket-14",
+                    "aspect": "Picket fences (wooden, white)",
+                    "likelyCountries": [
+                        "US",
+                        "CA"
+                    ]
+                },
+                {
+                    "id": "flora-stonewall-15",
+                    "aspect": "Dry stone walls",
+                    "likelyCountries": [
+                        "IE",
+                        "GB",
+                        "HR"
+                    ]
+                },
+                {
+                    "id": "flora-stickfence-16",
+                    "aspect": "Woven stick fences",
+                    "likelyCountries": [
+                        "KE",
+                        "TZ",
+                        "ET"
+                    ]
+                },
+                {
+                    "id": "flora-barbedwire-17",
+                    "aspect": "Barbed wire on concrete posts",
+                    "likelyCountries": [
+                        "IL",
+                        "JO",
+                        "TR"
+                    ]
+                }
+            ]
         }
     ]
 }

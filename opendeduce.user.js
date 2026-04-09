@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         OpenDeduce
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
-// @description  Geo-Deduction Engine v1.0.0 - Forensic Rebuild 501-1000 with Equal-Slice Bayesian Scoring.
+// @version      1.1.0
+// @description  Geo-Deduction Engine v1.1.0 - Cartographic Intelligence Update with Global Heatmap & 2,000+ Forensic Clues.
 // @author       OpenDeduce Team
 // @match        https://openguessr.com/*
 // @updateURL    https://raw.githack.com/AwesomeOddEven-NightKeys-LunarBlink/OpenDeduce_OpenGuessr-Advisor/main/opendeduce.user.js
@@ -46,9 +46,12 @@
         countries: [],
         rules: [],
         activeClueIds: new Set(),
+        searchIndex: [], // Flattened index for performance
         searchQuery: "",
         pos: JSON.parse(localStorage.getItem('od_pos') || '{"top":20,"left":null,"right":20}'),
-        isMinimized: localStorage.getItem('od_min') === 'true'
+        isMinimized: localStorage.getItem('od_min') === 'true',
+        history: JSON.parse(localStorage.getItem('od_hist') || '[]'),
+        currentRound: 1
     };
 
     /**
@@ -96,6 +99,13 @@
         .od-suspect-row { display: flex; justify-content: space-between; padding: 10px 8px; border-radius: 12px; font-size: 0.95rem; margin-bottom: 4px; transition: 0.2s; }
         .od-score { font-family: 'JetBrains Mono'; font-weight: 800; color: #10b981; }
         .od-advice-box { padding: 12px 24px; font-size: 0.75rem; border-top: 1px solid #ffffff08; background: #ffffff03; color: #94a3b8; line-height: 1.6; }
+        .od-map-container { padding: 10px 24px; background: #000; border-top: 1px solid #ffffff08; display: flex; flex-direction: column; align-items: center; }
+        .od-map-svg { width: 100%; height: 120px; transition: 0.3s; filter: drop-shadow(0 0 10px rgba(96,165,250, 0.1)); }
+        .od-map-path { fill: #ffffff11; stroke: #ffffff11; stroke-width: 0.5; transition: 0.3s; cursor: pointer; }
+        .od-map-path:hover { fill: #ffffff22; stroke: #60a5fa; }
+        .od-map-path.active { fill: rgba(96,165,250, 0.4); stroke: #60a5fa; filter: drop-shadow(0 0 5px #60a5fa); }
+        .od-map-path.hot { fill: rgba(16,185,129, 0.6); stroke: #10b981; filter: drop-shadow(0 0 8px #10b981); }
+        .od-map-label { font-family: 'JetBrains Mono'; font-size: 0.55rem; color: #ffffff44; margin-top: 5px; }
         .od-advice-tag { color: #60a5fa; font-weight: 800; cursor: pointer; text-decoration: underline; }
         .od-diff-btn { 
             margin-top: 8px; padding: 6px 12px; background: rgba(96,165,250,0.15); 
@@ -253,48 +263,89 @@
 
             return `<div class="od-suspect-row" style="opacity:${opacity}"><span>${deltaStr}${s.name}</span><span class="od-score">${s.prob.toFixed(1)}%</span></div>`;
         }).join('');
+
+        updateMap(sorted);
+        updateHistory();
+    }
+
+    function updateHistory() {
+        const box = document.getElementById('od-history-box');
+        const list = document.getElementById('od-history-list');
+        if (!STATE.history.length) { box.style.display = 'none'; return; }
+        box.style.display = 'block';
+        list.innerHTML = STATE.history.map(h => `
+            <div style="margin-bottom:6px; border-bottom:1px solid #ffffff05; padding-bottom:4px;">
+                <span style="color:#60a5fa">R${h.round}</span>: ${h.suspects[0] || 'Unknown'} 
+                <div style="opacity:0.5; font-size:0.55rem;">${h.time}</div>
+            </div>
+        `).join('');
+    }
+
+    function updateMap(sorted) {
+        const continents = {
+            "North America": "NA", "South America": "SA", "Europe": "EU", 
+            "Africa": "AF", "Asia": "AS", "Oceania": "OC"
+        };
+        const probMap = {};
+        sorted.forEach(s => {
+            const code = continents[s.continent];
+            if (code) probMap[code] = (probMap[code] || 0) + s.prob;
+        });
+
+        Object.keys(continents).forEach(name => {
+            const code = continents[name];
+            const el = document.getElementById(`map-${code}`);
+            if (!el) return;
+            const p = probMap[code] || 0;
+            
+            el.classList.remove('active', 'hot');
+            if (p > 50) el.classList.add('hot');
+            else if (p > 10) el.classList.add('active');
+            el.style.opacity = Math.max(0.1, p / 100);
+        });
     }
 
     function setupSearch() {
         const i = document.getElementById('od-search'), s = document.getElementById('od-suggest'), c = document.getElementById('od-content');
         
-        const getScore = (q, text) => {
-            const t = text.toLowerCase(), query = q.toLowerCase();
-            if (t === query) return 100;
-            if (t.includes(query)) return 80;
+        // Build Index
+        STATE.searchIndex = [];
+        STATE.rules.forEach(g => {
+            g.clues.forEach(cl => {
+                STATE.searchIndex.push({
+                    ...cl,
+                    category: g.category,
+                    searchString: `${cl.aspect} ${g.category}`.toLowerCase()
+                });
+            });
+        });
+
+        const getScore = (q, item) => {
+            const query = q.toLowerCase();
+            const text = item.searchString;
+            if (text.includes(query)) return 90;
             
-            // Bigram overlap for typo tolerance
-            const getBigrams = (str) => {
-                let bigrams = new Set();
-                for (let i = 0; i < str.length - 1; i++) bigrams.add(str.substring(i, i + 2));
-                return bigrams;
-            };
-            const b1 = getBigrams(query), b2 = getBigrams(t);
+            // Bigram overlap
+            const b1 = query.length > 1 ? new Set(query.match(/.{1,2}/g)) : new Set([query]);
             let intersect = 0;
-            for (let b of b1) if (b2.has(b)) intersect++;
+            for (let b of b1) if (text.includes(b)) intersect++;
             if (intersect > 0) return (intersect / b1.size) * 60;
-            
             return 0;
         };
 
         i.onkeydown = (e) => {
-            if (e.key === 'Enter') { 
-                s.style.display = 'none'; 
-                i.blur(); 
-            }
+            if (e.key === 'Enter') { s.style.display = 'none'; i.blur(); }
         };
 
         i.oninput = (e) => {
             const v = e.target.value.toLowerCase().trim();
             if(v.length < 1) { s.style.display = 'none'; c.style.display = 'none'; return; }
-            let matches = [];
-            STATE.rules.forEach(g => {
-                g.clues.forEach(cl => { 
-                    const score = Math.max(getScore(v, cl.aspect), getScore(v, g.category));
-                    if (score > 20) matches.push({...cl, category: g.category, score}); 
-                });
-            });
-            matches.sort((a,b) => b.score - a.score);
+            
+            const matches = STATE.searchIndex
+                .map(item => ({ ...item, score: getScore(v, item) }))
+                .filter(m => m.score > 20)
+                .sort((a,b) => b.score - a.score)
+                .slice(0, 15);
 
             if(matches.length > 0) {
                 s.innerHTML = matches.slice(0, 15).map(m => `
@@ -453,6 +504,20 @@
         }
     }
 
+    function saveRound() {
+        const trace = {
+            round: STATE.currentRound,
+            clues: Array.from(STATE.activeClueIds),
+            suspects: Array.from(document.querySelectorAll('.od-suspect-row')).slice(0, 3).map(r => r.innerText),
+            time: new Date().toLocaleTimeString()
+        };
+        STATE.history.push(trace);
+        if (STATE.history.length > 10) STATE.history.shift();
+        localStorage.setItem('od_hist', JSON.stringify(STATE.history));
+        STATE.currentRound++;
+        STATE.activeClueIds.clear();
+        syncUI();
+    }
     function exportTrace() {
         const suspects = Array.from(document.querySelectorAll('.od-suspect-row'))
             .slice(0, 3)
@@ -497,7 +562,7 @@
         p.style.top = STATE.pos.top + 'px'; p.style.left = STATE.pos.left !== null ? STATE.pos.left + 'px' : 'auto'; p.style.right = STATE.pos.right !== 'auto' ? STATE.pos.right + 'px' : 'auto';
         if(STATE.isMinimized) p.classList.add('minimized');
         p.innerHTML = `
-            <div class="od-header"><div class="od-title-grp"><span class="od-badge">Scalpel v1.0.0</span><h1 class="od-title">OpenDeduce</h1></div>
+            <div class="od-header"><div class="od-title-grp"><span class="od-badge">Scalpel v1.1.0</span><h1 class="od-title">OpenDeduce</h1></div>
             <div class="od-controls"><div class="od-btn" id="od-export" title="Export Trace">📋</div><div class="od-btn" id="od-reset">🔄</div><div class="od-btn" id="od-min">—</div></div></div>
             <div id="od-hud-body" style="display:${STATE.isMinimized?'none':'block'}">
                 <div class="od-search-box"><input type="text" id="od-search" class="od-input" placeholder="Search Rules 1,000+ Forensic Clues...">
@@ -505,15 +570,50 @@
                 <div id="od-conflict" class="od-conflict-banner"></div>
                 <div class="od-active-bar"></div>
                 <div id="od-advice" class="od-advice-box"></div>
+                <div class="od-map-container">
+                    <svg viewBox="0 0 100 60" class="od-map-svg">
+                        <!-- Simplified Continent Paths -->
+                        <path id="map-NA" class="od-map-path" d="M10,10 L35,10 L40,30 L20,35 Z" />
+                        <path id="map-SA" class="od-map-path" d="M30,35 L45,35 L40,55 L30,55 Z" />
+                        <path id="map-EU" class="od-map-path" d="M45,10 L55,10 L58,25 L45,25 Z" />
+                        <path id="map-AF" class="od-map-path" d="M45,25 L65,25 L60,50 L45,45 Z" />
+                        <path id="map-AS" class="od-map-path" d="M55,10 L90,10 L95,35 L65,35 L65,25 L58,25 Z" />
+                        <path id="map-OC" class="od-map-path" d="M75,40 L90,40 L90,55 L75,55 Z" />
+                    </svg>
+                    <div class="od-map-label">GEOGRAPHIC HEATMAP</div>
+                </div>
                 <div class="od-content" id="od-content"></div>
                 <div class="od-footer"><div class="od-res-meta"><span id="od-count">Calibrating Forensic Matrix...</span><span>Prob. Density</span></div>
-                <div class="od-meter-wrap"><div class="od-meter-fill" id="od-meter"></div></div><div class="od-suspect-list"></div></div>
+                <div class="od-meter-wrap"><div class="od-meter-fill" id="od-meter"></div></div><div class="od-suspect-list"></div>
+                 <div id="od-history-box" style="margin-top:15px; padding-top:10px; border-top:1px solid #ffffff11; display:none;">
+                    <div style="font-size:0.6rem; color:#60a5fa; margin-bottom:5px;">ROUND HISTORY</div>
+                    <div id="od-history-list" style="font-size:0.7rem; color:#94a3b8;"></div>
+                 </div>
+                </div>
             </div>
             <div id="od-modal"><div class="od-modal-content"><span class="od-modal-close">&times;</span><img></div></div>`;
         document.body.appendChild(p);
         document.getElementById('od-reset').onclick = () => { STATE.activeClueIds.clear(); syncUI(); };
         document.getElementById('od-export').onclick = exportTrace;
         document.getElementById('od-min').onclick = () => { p.classList.toggle('minimized'); STATE.isMinimized = p.classList.contains('minimized'); document.getElementById('od-hud-body').style.display = STATE.isMinimized?'none':'block'; localStorage.setItem('od_min', STATE.isMinimized); };
+        
+        const saveBtn = document.createElement('div');
+        saveBtn.className = 'od-btn'; saveBtn.title = 'Save Round'; saveBtn.innerText = '💾';
+        saveBtn.onclick = saveRound;
+        document.querySelector('.od-controls').prepend(saveBtn);
+        
+        // Map Interactivity
+        document.querySelectorAll('.od-map-path').forEach(path => {
+            path.onclick = (e) => {
+                const continent = e.target.id.replace('map-', '');
+                const names = { "NA": "North America", "SA": "South America", "EU": "Europe", "AF": "Africa", "AS": "Asia", "OC": "Oceania" };
+                const fullName = names[continent];
+                const input = document.getElementById('od-search');
+                input.value = fullName;
+                input.dispatchEvent(new Event('input'));
+            };
+        });
+
         setupDrag(p); setupSearch(); syncUI();
     }
     init();
